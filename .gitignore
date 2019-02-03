@@ -89,6 +89,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+linux_neolej_env/
 
 # Spyder project settings
 .spyderproject

@@ -1,0 +1,4 @@
+{
+    "python.pythonPath": "linux_neolej_env/bin/python",
+    "python.linting.enabled": false
+}
