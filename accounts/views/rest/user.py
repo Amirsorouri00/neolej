@@ -79,7 +79,6 @@ class SingleUser(APIView):
             error_message = {'errors': [str(val)] for val in e}
             return JsonResponse(error_message, safe=False, status=500)
 
-
 from rest_framework import generics
 # from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
@@ -123,3 +122,7 @@ class UserListCreate(generics.ListCreateAPIView):
     #     obj = get_object_or_404(queryset, **filter)
     #     self.check_object_permissions(self.request, obj)
     #     return obj
+
+
+def login(self, request, *args, **kwargs):
+    return True
