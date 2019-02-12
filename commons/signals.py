@@ -4,7 +4,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from accounts.models import User
-from calendars.models import Event
+from education.models import Workshop
 from rest_framework.authtoken.models import Token
 
 
@@ -18,12 +18,10 @@ def all_models_validation(instance, *args, **kwargs):
 #    instance.full_clean()
     print('all_models_are_validated')
 
-
-@receiver(post_save, sender=Event)
-def create_Event_UUID(sender, instance=None, created=False, **kwargs):
+@receiver(post_save, sender=Workshop)
+def create_user_UUID(sender, instance=None, created=False, **kwargs):
     if created:
         instance.uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(instance.id))
-        instance.end_time = instance.event_time
         instance.save()
 
 @receiver(post_save, sender=User)

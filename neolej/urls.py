@@ -20,6 +20,7 @@ from accounts.views import admins as admin_user
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
+    path('education/', include('education.urls')),
     path('account/', include('django.contrib.auth.urls')),
     path('accounts/signup/', admin_user.AdminSignUpView.as_view(), name='sign_up'),
     path('accounts/signup/', admin_user.AdminSignUpView.as_view(), name='home'),

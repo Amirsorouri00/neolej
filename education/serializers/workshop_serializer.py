@@ -1,7 +1,8 @@
 import datetime
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from education.models import Course, CostUnit, Price, Workshop, WorkshopFile
+from accounts.serializers.user_serializer import UserSerializer as US
+from education.models import Course, CourseBody, CostUnit, Price, Workshop, WorkshopFile
 from file_app.serializers.file_serializer import FileSerializer
 from commons import serializers as cserializers
 
@@ -17,9 +18,9 @@ from commons import serializers as cserializers
 
 class CourseBodySerializer(cserializers.DynamicFieldsModelSerializer):
     class Meta:
-        model = Course
+        model = CourseBody
         fields = ('id', 'description', )
-        extra_kwargs = {'id': {'write_only': True}}
+        extra_kwargs = {}
 
 class UnitField(serializers.Field):
     def to_representation(self, instance):
@@ -38,7 +39,6 @@ class UnitField(serializers.Field):
 
     def to_internal_value(self, data):
         # For server-side use
-
         data = data.strip('[').rstrip(']')
         units = {'units': [CostUnit(unit_id = int(val)) for val in data.split(',')]}
         return units
@@ -48,25 +48,25 @@ class PriceSerializer(cserializers.DynamicFieldsModelSerializer):
     price = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Price
-        fields = ('id', 'uuid', 'unit', 'cost', 'price')
+        fields = ('id', 'uuid', 'online_or_workshop', 'unit', 'cost', 'price')
         read_only_fields = ('uuid', 'price')
-        extra_kwargs = {'id': {'write_only': True}, 'cost': {'write_only': True}, 'cost': {'write_only': True}}
+        extra_kwargs = {'cost': {'write_only': True}, 'cost': {'write_only': True}}
     
     def get_price(self, obj):
         return {'cost':obj.get_price(), 'unit': 'Rial'}
 
 class CourseSerializer(cserializers.DynamicFieldsModelSerializer):
-    body = CourseBodySerializer(source='*')
-    price = PriceSerializer(read_only=True)
+    description = CourseBodySerializer(source='body', read_only=True)
+    price = PriceSerializer(required=False, read_only=True)
     teacher = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Course
         fields = ('id', 'uuid', 'title', 'instructor', 'rate', 'body', 'timestamp', 'price' )
         read_only_fields = ()
-        extra_kwargs = {'id': {'write_only': True}, 'instructor': {'write_only': True}, 'timestamp': {'write_only': True}}
+        extra_kwargs = {'instructor': {'write_only': True}, 'timestamp': {'write_only': True}}
 
     def get_teacher(self, obj):
-        return obj.instructor.uuid
+        return US(obj.instructor, fields=('email', 'email')).data
 
 
 '''
@@ -79,31 +79,28 @@ class CourseSerializer(cserializers.DynamicFieldsModelSerializer):
 '''
 
 
-class WorkshopFileSerializer(serializers.ModelSerializer, FileSerializer):
+class WorkshopFileSerializer(FileSerializer):
     class Meta:
         model = WorkshopFile
         fields = ('file', 'workshop', )
-        extra_kwargs = {'id': {'write_only': True}, 'workshop': {'write_only': True}}  
+        extra_kwargs = {'workshop': {'write_only': True}}  
 
-class WorkshopSerializer(cserializers.DynamicFieldsModelSerializer):
-    files = WorkshopFileSerializer(many = True, read_only = True)
+class WorkshopSerializer(CourseSerializer):
+    # workshop_files = WorkshopFileSerializer(many = True, read_only = True)
+    # files = serializers.SerializerMethodField(read_only=True)
+    workshop_files = serializers.SlugRelatedField(
+        queryset = WorkshopFile.objects.all(),
+        many=True,
+        slug_field='workshop_id',
+        allow_null = True
+    )
     class Meta:
-        model: Workshop
-        fields= ('id', 'uuid', 'city', 'start_date', 'end_date', 'start_time', 'end_time', 'workshop', 'files')                    
-        read_only_fields = ()
-        extra_kwargs = {'id': {'write_only': True}, 'workshop': {'write_only': True}}  
-
-                                                                                                        
-'''
-                               888               888                        
-                               888               888                        
-                               888               888                        
-888  888  888  .d88b.  888d888 888  888 .d8888b  88888b.   .d88b.  88888b.  
-888  888  888 d88""88b 888P"   888 .88P 88K      888 "88b d88""88b 888 "88b 
-888  888  888 888  888 888     888888K  "Y8888b. 888  888 888  888 888  888 
-Y88b 888 d88P Y88..88P 888     888 "88b      X88 888  888 Y88..88P 888 d88P 
- "Y8888888P"   "Y88P"  888     888  888  88888P' 888  888  "Y88P"  88888P"  
-                                                                   888      
-                                                                   888      
-                                                                   888                                                                                                              
-'''                                                                   
+        model = Workshop
+        fields= ('id', 'uuid', 'title', 'instructor', 'rate', 'body', 'description', 'timestamp'
+        , 'price', 'start_date', 'end_date', 'workshop_files', 'start_time', 'end_time', 'teacher')
+        extra_kwargs = {'instructor': {'write_only': True}}
+    
+    # def get_files(self, obj):
+    #     print(obj.workshop_files)
+    #     return 'Null'
+    #     # return WorkshopFileSerializer(obj.workshop_files, many=True)
