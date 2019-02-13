@@ -165,6 +165,8 @@ from file_app.models import File
 def workshop_file_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/file_<remark>/<filename>
     return 'workshop_{0}/{1}'.format(instance.workshop.uuid, filename)
+    # return 'workshop_{0}/{1}'.format('instance.workshop.uuid', filename)
+
 
 class WorkshopFile(File):
     file = models.FileField(upload_to=workshop_file_directory_path, blank=False, null=False)

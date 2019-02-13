@@ -80,13 +80,15 @@ from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
+from file_app.serializers.file_serializer import FileSerializer as FS
+
 
 
 @method_decorator([require_http_methods(["GET", "POST", "PUT", "DELETE"])], name='dispatch')
 class WorkshopAPI(APIView):
+    parser_classes = (MultiPartParser, FormParser)
     serializer_class = WS
     model = Workshop
-    parser_classes = (MultiPartParser, FormParser)
     errors = []
 
     def get(self, request, *args, **kwargs):
@@ -119,13 +121,22 @@ class WorkshopAPI(APIView):
             else:
                 print('body_serializer_errors: {0}'.format(body_serializer.errors))
                 self.errors.append({'body_serializer': body_serializer.errors})
-            file_serializer = WFS(data=request.data)
-            if file_serializer.is_valid():
-                file_serializer.save(workshop_id = workshop.id)
-                # file_serializer.save()
-            else:
-                print('file_serializer_errors: {0}'.format(file_serializer.errors))
-                self.errors.append({'file_serializer': file_serializer.errors})
+            print(request.data.getlist('file'))
+            files = request.data.getlist('file')
+            for file in files:
+                tmp_dict = {}
+                tmp_dict['file'] = file
+                if None == request.data.get('remark')
+                    request.data.get['remark'] = 'Not Set'
+                tmp_dict['remark'] = request.data.get('remark')
+                file_serializer = WFS(data=tmp_dict)
+                if file_serializer.is_valid():
+                    print(file_serializer.validated_data)
+                    file_serializer.save(workshop = workshop)
+                    # file_serializer.save()
+                else:
+                    print('file_serializer_errors: {0}'.format(file_serializer.errors))
+                    self.errors.append({'file_serializer': file_serializer.errors})
         else:
             print('workshop_serializer_errors: {0}'.format(workshop_serializer.errors))
             self.errors.append({'workshop_errors': workshop_serializer.errors})
@@ -135,12 +146,13 @@ class WorkshopAPI(APIView):
 
 
     def put(self, request, uuid, *args, **kwargs):
-        workshop = get_object_or_404(self.model, uuid = uuid)
-        serializer = self.serializer_class(workshop, data = request.POST, partial=True)
-        if serializer.is_valid():
-            return JsonResponse({'received data': serializer.data}, safe=False, status=200)
-        else:
-            return JsonResponse({'received data': serializer.errors}, safe=False, status=500)
+        print(request.data)
+        # workshop = get_object_or_404(self.model, uuid = uuid)
+        # serializer = self.serializer_class(workshop, data = request.POST, partial=True)
+        # if serializer.is_valid():
+        #     return JsonResponse({'received data': serializer.data}, safe=False, status=200)
+        # else:
+        #     return JsonResponse({'received data': serializer.errors}, safe=False, status=500)
 
     def delete(self, request, uuid, *args, **kwargs):
         # delete an object and send a confirmation response
