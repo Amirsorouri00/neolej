@@ -15,8 +15,8 @@ urlpatterns = [
         path('workshop/', include(([
             path('test2/', workshop_test2, name='rest_workshop_test2'),
             path('test1/', workshop_test1, name='rest_workshop_test1'),
-            path('', WorkshopAPI.as_view(), name='rest_workshop'),
             path('<int:uuid>/', WorkshopAPI.as_view(), name='rest_workshop_put'),
+            path('', WorkshopAPI.as_view(), name='rest_workshop'),
         ], 'education'), namespace='rest_workshops')),
 
         path('workshop_file/', include(([

@@ -83,7 +83,6 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from file_app.serializers.file_serializer import FileSerializer as FS
 
 
-
 @method_decorator([require_http_methods(["GET", "POST", "PUT", "DELETE"])], name='dispatch')
 class WorkshopAPI(APIView):
     parser_classes = (MultiPartParser, FormParser)
@@ -91,7 +90,11 @@ class WorkshopAPI(APIView):
     model = Workshop
     errors = []
 
-    def get(self, request, *args, **kwargs):
+    # def __init__(self, *args, **kwargs):
+    #     self.request = fields = kwargs.pop('request', None)
+    #     print(self.request)
+
+    def get(self, request, format=None, *args, **kwargs):
         workshop_serialized = 'workshop_serialized temp'
         if request.GET.get('field'):
             field = request.GET.get('field')
@@ -108,13 +111,13 @@ class WorkshopAPI(APIView):
             workshop_serialized = self.serializer_class(get_object_or_404(self.model, uuid = request.GET.get('uuid')))
         return JsonResponse({'response': workshop_serialized.data}, safe=False, status=200)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, format=None, *args, **kwargs):
         print(request.data)
-        workshop_serializer = WS(data = request.POST)
+        workshop_serializer = self.get_workshop_serializer()(data = request.POST)
         if workshop_serializer.is_valid():
             workshop = workshop_serializer.save()
             body = CourseBody(description=request.POST.get('body'))
-            body_serializer = CBS(data= request.POST)
+            body_serializer = self.get_course_body_serializer()(data= request.POST)
             if body_serializer.is_valid():
                 body = body_serializer.save()
                 workshop_serializer.save(body=body)
@@ -126,10 +129,11 @@ class WorkshopAPI(APIView):
             for file in files:
                 tmp_dict = {}
                 tmp_dict['file'] = file
-                if None == request.data.get('remark')
-                    request.data.get['remark'] = 'Not Set'
-                tmp_dict['remark'] = request.data.get('remark')
-                file_serializer = WFS(data=tmp_dict)
+                if None == request.data.get('remark'):
+                    tmp_dict['remark'] = 'Not Set'
+                else:
+                    tmp_dict['remark'] = request.data.get('remark')
+                file_serializer = self.get_workshop_file_serializer()(data=tmp_dict)
                 if file_serializer.is_valid():
                     print(file_serializer.validated_data)
                     file_serializer.save(workshop = workshop)
@@ -144,17 +148,52 @@ class WorkshopAPI(APIView):
  
         return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=200)
 
-
-    def put(self, request, uuid, *args, **kwargs):
+    def put(self, request, uuid, format=None, *args, **kwargs):
         print(request.data)
-        # workshop = get_object_or_404(self.model, uuid = uuid)
-        # serializer = self.serializer_class(workshop, data = request.POST, partial=True)
-        # if serializer.is_valid():
-        #     return JsonResponse({'received data': serializer.data}, safe=False, status=200)
-        # else:
-        #     return JsonResponse({'received data': serializer.errors}, safe=False, status=500)
+        print(uuid)
+        workshop = get_object_or_404(self.model, pk=uuid)
+        workshop_serializer = self.get_workshop_serializer()(workshop, data=request.POST, partial=True)
+        if workshop_serializer.is_valid():
+            workshop = workshop_serializer.save()
+            # set body serializer
+            if workshop.body is not None:
+                body = workshop.body
+                body_serializer = self.get_course_body_serializer()(body, data=request.POST.get('body'), partial=True)
+            else:
+                body = CourseBody(description=request.POST.get('body'))
+                body_serializer = self.get_course_body_serializer()(data= request.POST)
+            # save body serializer
+            if body_serializer.is_valid():
+                body = body_serializer.save()
+                workshop_serializer.save(body=body)
+            else:
+                print('body_serializer_errors: {0}'.format(body_serializer.errors))
+                self.errors.append({'body_serializer': body_serializer.errors})
+            # file serializer            
+            print(request.data.getlist('file'))
+            files = request.data.getlist('file')
+            for file in files:
+                tmp_dict = {}
+                tmp_dict['file'] = file
+                if None == request.data.get('remark'):
+                    tmp_dict['remark'] = 'Not Set'
+                else:
+                    tmp_dict['remark'] = request.data.get('remark')
+                file_serializer = self.get_workshop_file_serializer()(data=tmp_dict)
+                if file_serializer.is_valid():
+                    print(file_serializer.validated_data)
+                    file_serializer.save(workshop = workshop)
+                else:
+                    print('file_serializer_errors: {0}'.format(file_serializer.errors))
+                    self.errors.append({'file_serializer': file_serializer.errors})
+        else:
+            print('workshop_serializer_errors: {0}'.format(workshop_serializer.errors))
+            self.errors.append({'workshop_errors': workshop_serializer.errors})
+            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=500)
+ 
+        return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=200)
 
-    def delete(self, request, uuid, *args, **kwargs):
+    def delete(self, request, uuid, format=None, *args, **kwargs):
         # delete an object and send a confirmation response
         from django.db.models import ProtectedError
         try:
@@ -166,3 +205,22 @@ class WorkshopAPI(APIView):
         except Exception as e:
             error_message = {'errors': [str(val)] for val in e}
             return JsonResponse(error_message, safe=False, status=500)
+
+    def get_workshop_serializer(self):
+        if 'get' == self.request.method:
+            # for read
+            return WS
+        else:
+            # for write
+            return WS
+    def get_workshop_file_serializer(self):
+        if 'get' == self.request.method:
+            return WFS
+        else:
+            return WFS
+    def get_course_body_serializer(self):
+        if 'get' == self.request.method:
+            return CBS
+        else:
+            return CBS
+    
