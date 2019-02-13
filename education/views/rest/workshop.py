@@ -24,8 +24,7 @@ from django.shortcuts import get_object_or_404
     888  d8P  Y8b 88K      888    88K      
     888  88888888 "Y8888b. 888    "Y8888b. 
     888  Y8b.          X88 Y88b.       X88 
-    888   "Y8888   88888P'  "Y888  88888P' 
-                                                                           
+    888   "Y8888   88888P'  "Y888  88888P'                                                                       
 '''                                        
                                         
 
@@ -96,11 +95,11 @@ class WorkshopAPI(APIView):
             field = request.GET.get('field')
             if 'all' == field:
                 workshops = Workshop.objects.all()
-                workshops_serialized = WS(workshops, many=True)
+                workshops_serialized = self.serializer_class(workshops, many=True)
             elif 'uuid' == field:
                 workshop_serialized = self.serializer_class(get_object_or_404(self.model, uuid = request.GET.get('uuid')))
-            elif 'email' == field:
-                workshop_serialized = self.serializer_class(get_object_or_404(self.model, email = request.GET.get('email')))
+            elif 'title' == field:
+                workshop_serialized = self.serializer_class(get_object_or_404(self.model, title = request.GET.get('title')))
             else:
                 return JsonResponse({'error': "This url doesn't provide information based on your request information."}, safe=False, status=400)
         else:

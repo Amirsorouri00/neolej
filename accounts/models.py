@@ -1,8 +1,33 @@
+'''
+ .d8888b.  888          888               888      8888888                                         888             
+d88P  Y88b 888          888               888        888                                           888             
+888    888 888          888               888        888                                           888             
+888        888  .d88b.  88888b.   8888b.  888        888   88888b.d88b.  88888b.   .d88b.  888d888 888888 .d8888b  
+888  88888 888 d88""88b 888 "88b     "88b 888        888   888 "888 "88b 888 "88b d88""88b 888P"   888    88K      
+888    888 888 888  888 888  888 .d888888 888        888   888  888  888 888  888 888  888 888     888    "Y8888b. 
+Y88b  d88P 888 Y88..88P 888 d88P 888  888 888        888   888  888  888 888 d88P Y88..88P 888     Y88b.       X88 
+ "Y8888P88 888  "Y88P"  88888P"  "Y888888 888      8888888 888  888  888 88888P"   "Y88P"  888      "Y888  88888P' 
+                                                                         888                                       
+                                                                         888                                       
+                                                                         888                                       
+''' 
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager ## A new class is imported. ##
 from django.utils.translation import ugettext_lazy as _
 
+
+'''
+888     888  .d8888b.  8888888888 8888888b.       
+888     888 d88P  Y88b 888        888   Y88b      
+888     888 Y88b.      888        888    888      
+888     888  "Y888b.   8888888    888   d88P      
+888     888     "Y88b. 888        8888888P"       
+888     888       "888 888        888 T88b        
+Y88b. .d88P Y88b  d88P 888        888  T88b       
+ "Y88888P"   "Y8888P"  8888888888 888   T88b      
+                                                  
+'''
 
 class UserManager(BaseUserManager):
     """Define a model manager for User model with no username field."""
