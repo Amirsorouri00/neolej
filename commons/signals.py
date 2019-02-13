@@ -19,7 +19,7 @@ def all_models_validation(instance, *args, **kwargs):
     print('all_models_are_validated')
 
 @receiver(post_save, sender=Workshop)
-def create_user_UUID(sender, instance=None, created=False, **kwargs):
+def create_workshop_UUID(sender, instance=None, created=True, **kwargs):
     if created:
         instance.uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(instance.id))
         instance.save()
