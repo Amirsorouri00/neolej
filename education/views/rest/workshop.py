@@ -90,10 +90,6 @@ class WorkshopAPI(APIView):
     model = Workshop
     errors = []
 
-    # def __init__(self, *args, **kwargs):
-    #     self.request = fields = kwargs.pop('request', None)
-    #     print(self.request)
-
     def get(self, request, format=None, *args, **kwargs):
         workshop_serialized = 'workshop_serialized temp'
         if request.GET.get('field'):
@@ -197,7 +193,7 @@ class WorkshopAPI(APIView):
         # delete an object and send a confirmation response
         from django.db.models import ProtectedError
         try:
-            get_object_or_404(self.model, uuid=uuid).delete()            
+            get_object_or_404(self.model, pk=uuid).delete()            
             return JsonResponse({'deleted data': uuid}, safe=False, status=200)
         except ProtectedError:
             error_message = "This object can't be deleted!!"
