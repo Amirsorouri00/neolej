@@ -27,7 +27,16 @@ SECRET_KEY = ')wyvs7qkr$8njj=@h+mv)r36z+g=#zd-s&1mupqc+@t=77n^(x'
 DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '185.211.56.54', 'neolej.ir']
-
+# CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ORIGIN_WHITELIST = (
+    'http//:localhost:8000',
+    'http//:127.0.0.1:8000',
+    'http//:neolej.ir',
+    'neolej.ir',
+    'http//:185.211.56.54',
+    '185.211.56.54',
+)
 
 # Application definition
 
@@ -39,8 +48,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
-    'rest_framework',
     'rest_framework.authtoken',
+    'rest_framework',
+    'corsheaders',
     'crispy_forms',
     'accounts',
     'education',
@@ -49,6 +59,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

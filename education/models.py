@@ -83,7 +83,7 @@ class Course(models.Model):
     id = models.AutoField(primary_key=True)
     uuid = models.UUIDField(db_index=True, unique=True, blank=True, null=True)
     title = models.CharField(max_length=511, blank=True, null=True)
-    instructor = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.SET(get_sentinel_user)) 
+    instructor = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.SET(get_sentinel_user), related_name='course_instructor')
     rate = models.IntegerField(
         default=0,
         validators=[MaxValueValidator(100), MinValueValidator(1)]
