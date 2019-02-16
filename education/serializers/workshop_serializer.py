@@ -44,45 +44,54 @@ class UnitField(serializers.Field):
 
         ret = []
         # print(instance['email'])
-        for value in instance.units.all():
-            # print(value)
-            tmp = {
-                "unit_id": value.unit_id,
-                "unit_name": value.get_id_display()
-            }
-            ret.append(tmp)
+        # for value in instance.unit.all:
+        #     # print(value)
+        #     tmp = {
+        #         "unit_id": value.unit_id,
+        #         "unit_name": value.get_id_display()
+        #     }
+        #     ret.append(tmp)
         return ret
 
     def to_internal_value(self, data):
         # For server-side use
         data = data.strip('[').rstrip(']')
-        units = {'units': [CostUnit(unit_id = int(val)) for val in data.split(',')]}
-        return units
+        cost_unit = CostUnit.objects.create(unit_id = int(data)).save()
+        unit = {'unit': cost_unit}
+        return unit
 
 class PriceSerializer(cserializers.DynamicFieldsModelSerializer):
     unit = UnitField(source='*')
     price = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Price
-        fields = ('id', 'uuid', 'online_or_workshop', 'unit', 'cost', 'price')
+        fields = ('id', 'uuid', 'online', 'unit', 'cost', 'price')
         read_only_fields = ('uuid', 'price')
         extra_kwargs = {'cost': {'write_only': True}, 'cost': {'write_only': True}}
     
     def get_price(self, obj):
-        return {'cost':obj.get_price(), 'unit': 'Rial'}
+        return {'cost':obj.get_price('unit'), 'unit': 'Rial'}
+
 
 class CourseSerializer(cserializers.DynamicFieldsModelSerializer):
     description = CourseBodySerializer(source='body', read_only=True)
     price = PriceSerializer(required=False, read_only=True)
+    discount = serializers.SerializerMethodField(read_only=True)
     teacher = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Course
-        fields = ('id', 'uuid', 'title', 'instructor', 'rate', 'body', 'timestamp', 'price' )
+        fields = ('id', 'uuid', 'title', 'instructor', 'rate', 'body', 'timestamp', 'price' , 'discount')
         read_only_fields = ()
         extra_kwargs = {'instructor': {'write_only': True}, 'timestamp': {'write_only': True}}
 
     def get_teacher(self, obj):
         return US(obj.instructor, fields=('email', 'email')).data
+    # def get_discount(self, obj):
+    #     # today = datetime.date.now()
+    #     if obj.price:
+            
+    #     else:
+    #         return {}
 
 
 '''
@@ -116,9 +125,9 @@ class WorkshopSerializer(CourseSerializer):
     class Meta:
         model = Workshop
         fields= ('id', 'uuid', 'title', 'instructor', 'rate', 'body', 'description', 'workshop_files', 'timestamp'
-        , 'price', 'start_date', 'end_date', 'start_time', 'end_time', 'teacher')
+        , 'price', 'start_date', 'end_date', 'start_time', 'end_time', 'teacher', 'discount')
         extra_kwargs = {'instructor': {'write_only': True}}
-    
+
     # def get_files(self, obj):
     #     print(obj.workshop_files)
     #     return 'Null'

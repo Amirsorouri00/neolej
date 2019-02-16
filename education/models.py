@@ -68,7 +68,7 @@ class CostUnit(models.Model):
 class Price(models.Model):
     id = models.AutoField(primary_key=True)
     uuid = models.UUIDField(db_index=True, unique=True, blank=True, null=True)
-    online_or_workshop = models.BooleanField(default=True, blank=False, null=False) 
+    online = models.BooleanField(default=True, blank=False, null=False) 
     unit = models.ForeignKey(CostUnit, blank=True, null=True, on_delete=models.SET_NULL)
     cost = models.DecimalField(max_digits=10, decimal_places=3)
 
@@ -91,6 +91,7 @@ class Course(models.Model):
     body = models.OneToOneField(CourseBody, blank=True, null=True, on_delete=models.SET_NULL)
     timestamp = models.DateTimeField(auto_now_add=True)
     price = models.ForeignKey(Price, blank=True, null=True, on_delete=models.SET_NULL) 
+    buyers = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, null=True)
 
     class Meta:
         db_table = 'education_course'
@@ -117,7 +118,7 @@ class Discount(models.Model):
         default=0,
         validators=[MaxValueValidator(100), MinValueValidator(1)]
     )
-    price = models.ForeignKey(Price, blank=True, null=True, on_delete=models.CASCADE)
+    price = models.ForeignKey(Price, blank=True, null=True, on_delete=models.CASCADE, related_name='price_discount')
 
 class PersonalDiscount(Discount):
     coupon_text = models.CharField(max_length=15, blank=False, null=False)

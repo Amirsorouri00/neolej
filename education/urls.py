@@ -3,6 +3,8 @@ from django.conf.urls import url
 from django.views.decorators.csrf import csrf_exempt
 from education.views.rest.workshop import test1 as workshop_test1, test2 as workshop_test2, WorkshopAPI
 from education.views.rest.workshop_file import test2 as workshop_file_test2
+from education.views.rest.discount import test2 as discount_file_test2, test1 as discount_file_test1
+
 
 app_name = 'education'
 
@@ -22,6 +24,11 @@ urlpatterns = [
         path('workshop_file/', include(([
             path('test2/', workshop_file_test2, name='rest_workshop_file_test2'),
         ], 'education'), namespace='rest_workshop_files')),
+
+        path('discount/', include(([
+            path('test2/', discount_file_test2, name='rest_discount_test2'),
+            path('test1/', discount_file_test1, name='rest_discount_test1'),
+        ], 'education'), namespace='rest_discount')),
         
     ], 'education'), namespace='rest')),
 ]

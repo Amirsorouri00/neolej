@@ -11,9 +11,9 @@ Y88b  d88P 888 Y88..88P 888 d88P 888  888 888        888   888  888  888 888 d88
                                                                          888                                       
                                                                          888                                       
 '''                                                                         
-from education.serializers.workshop_serializer import WorkshopSerializer as WS, CourseBodySerializer as CBS, WorkshopFileSerializer as WFS
+from education.serializers.workshop_serializer import WorkshopSerializer as WS, CourseBodySerializer as CBS, WorkshopFileSerializer as WFS, PriceSerializer as PS
 from django.http import JsonResponse, HttpResponse
-from education.models import Workshop, CourseBody
+from education.models import Workshop, CourseBody, Price
 from django.shortcuts import get_object_or_404
 
 '''
@@ -111,15 +111,27 @@ class WorkshopAPI(APIView):
         workshop_serializer = self.get_workshop_serializer()(data = request.POST)
         if workshop_serializer.is_valid():
             workshop = workshop_serializer.save()
-            body = CourseBody(description=request.POST.get('body'))
-            body_serializer = self.get_course_body_serializer()(data= request.POST)
+            # body = CourseBody(description=request.POST.get('description'))
+            body_serializer = self.get_course_body_serializer()(data= request.POST.get('description'))
             if body_serializer.is_valid():
                 body = body_serializer.save()
                 workshop_serializer.save(body=body)
             else:
                 print('body_serializer_errors: {0}'.format(body_serializer.errors))
                 self.errors.append({'body_serializer': body_serializer.errors})
-            print(request.data.getlist('file'))
+
+            # price
+            # price_serializer = self.get_price_serializer()(data= request.POST)
+            # if price_serializer.is_valid():
+            #     price = price_serializer.save()
+            #     workshop_serializer.save(price=price)
+            # else:
+            #     print('price_serializer_errors: {0}'.format(price_serializer.errors))
+            #     self.errors.append({'price_serializer': price_serializer.errors})
+            # price = Price.objects.create(online_or_workshop = False, unit = 1, cost = request.POST.get('price'))
+
+            # file
+            # print(request.data.getlist('file'))
             files = request.data.getlist('file')
             for file in files:
                 tmp_dict = {}
@@ -147,16 +159,16 @@ class WorkshopAPI(APIView):
         print(request.data)
         print(uuid)
         workshop = get_object_or_404(self.model, pk=uuid)
-        workshop_serializer = self.get_workshop_serializer()(workshop, data=request.POST, partial=True)
+        workshop_serializer = self.get_workshop_serializer()(workshop, data=request.data, partial=True)
         if workshop_serializer.is_valid():
             workshop = workshop_serializer.save()
             # set body serializer
             if workshop.body is not None:
                 body = workshop.body
-                body_serializer = self.get_course_body_serializer()(body, data=request.POST.get('body'), partial=True)
+                body_serializer = self.get_course_body_serializer()(body, data=request.data, partial=True)
             else:
-                body = CourseBody(description=request.POST.get('body'))
-                body_serializer = self.get_course_body_serializer()(data= request.POST)
+                # body = CourseBody(description=request.data.get('description'))
+                body_serializer = self.get_course_body_serializer()(data= request.data)
             # save body serializer
             if body_serializer.is_valid():
                 body = body_serializer.save()
@@ -164,6 +176,20 @@ class WorkshopAPI(APIView):
             else:
                 print('body_serializer_errors: {0}'.format(body_serializer.errors))
                 self.errors.append({'body_serializer': body_serializer.errors})
+
+            # price
+            # if workshop.price is not None:
+            #     price = workshop.price
+            #     price_serializer = self.get_price_serializer()(body, data=request.data, partial=True)
+            # else:
+            #     price_serializer = self.get_price_serializer()(data= request.data)
+            # if price_serializer.is_valid():
+            #     price = price_serializer.save()
+            #     workshop_serializer.save(price=price)
+            # else:
+            #     print('price_serializer_errors: {0}'.format(price_serializer.errors))
+            #     self.errors.append({'price_serializer': price_serializer.errors})
+
             # file serializer            
             print(request.data.getlist('file'))
             files = request.data.getlist('file')
@@ -218,4 +244,8 @@ class WorkshopAPI(APIView):
             return CBS
         else:
             return CBS
-    
+    def get_price_serializer(self):
+        if 'get' == self.request.method:
+            return PS
+        else:
+            return PS
