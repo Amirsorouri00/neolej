@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from education.views.rest.workshop import test1 as workshop_test1, test2 as workshop_test2, WorkshopAPI
 from education.views.rest.workshop_file import test2 as workshop_file_test2
 from education.views.rest.discount import test2 as discount_file_test2, test1 as discount_file_test1
-
+from education.views.rest.buy_workshop import BuyAPI
 
 app_name = 'education'
 
@@ -19,6 +19,13 @@ urlpatterns = [
             path('test1/', workshop_test1, name='rest_workshop_test1'),
             path('<int:uuid>/', WorkshopAPI.as_view(), name='rest_workshop_put'),
             path('', WorkshopAPI.as_view(), name='rest_workshop'),
+
+            path('buy/', include(([
+                path('', BuyAPI.as_view(), name='rest_workshop_buy_post'),
+                path('<int:workshop_uuid>/<int:user_uuid>/', BuyAPI.as_view(), name='rest_workshop_buy_delete'),
+                # path('test2/', discount_file_test2, name='rest_discount_test2'),
+                # path('test1/', discount_file_test1, name='rest_discount_test1'),
+            ], 'education'), namespace='rest_workshop_buy')),
         ], 'education'), namespace='rest_workshops')),
 
         path('workshop_file/', include(([
@@ -29,6 +36,5 @@ urlpatterns = [
             path('test2/', discount_file_test2, name='rest_discount_test2'),
             path('test1/', discount_file_test1, name='rest_discount_test1'),
         ], 'education'), namespace='rest_discount')),
-        
     ], 'education'), namespace='rest')),
 ]

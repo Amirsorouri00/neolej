@@ -76,11 +76,11 @@ class PriceSerializer(cserializers.DynamicFieldsModelSerializer):
 class CourseSerializer(cserializers.DynamicFieldsModelSerializer):
     description = CourseBodySerializer(source='body', read_only=True)
     price = PriceSerializer(required=False, read_only=True)
-    discount = serializers.SerializerMethodField(read_only=True)
+    # discount = serializers.SerializerMethodField(read_only=True)
     teacher = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Course
-        fields = ('id', 'uuid', 'title', 'instructor', 'rate', 'body', 'timestamp', 'price' , 'discount')
+        fields = ('id', 'uuid', 'title', 'instructor', 'rate', 'body', 'timestamp', 'price', 'online')
         read_only_fields = ()
         extra_kwargs = {'instructor': {'write_only': True}, 'timestamp': {'write_only': True}}
 
@@ -89,7 +89,6 @@ class CourseSerializer(cserializers.DynamicFieldsModelSerializer):
     # def get_discount(self, obj):
     #     # today = datetime.date.now()
     #     if obj.price:
-            
     #     else:
     #         return {}
 
@@ -112,7 +111,6 @@ class WorkshopFileSerializerR(FileSerializer):
         fields = ('file', 'workshop_id', 'remark', 'timestamp')
         # extra_kwargs = {'workshop_id': {'write_only': True}}  
 
-
 class WorkshopSerializer(CourseSerializer):
     workshop_files = WorkshopFileSerializerR(many = True, read_only = True)
     # files = serializers.SerializerMethodField(read_only=True)
@@ -125,7 +123,7 @@ class WorkshopSerializer(CourseSerializer):
     class Meta:
         model = Workshop
         fields= ('id', 'uuid', 'title', 'instructor', 'rate', 'body', 'description', 'workshop_files', 'timestamp'
-        , 'price', 'start_date', 'end_date', 'start_time', 'end_time', 'teacher', 'discount')
+        , 'price', 'start_date', 'end_date', 'start_time', 'end_time', 'teacher', 'buyers')
         extra_kwargs = {'instructor': {'write_only': True}}
 
     # def get_files(self, obj):

@@ -75,7 +75,6 @@ class Price(models.Model):
     def get_price(self, unit):
         return self.cost
 
-
 def get_sentinel_user():
     return get_user_model().objects.get_or_create(email = 'deleted',username='deleted', password=123456)[0]
 
@@ -89,9 +88,10 @@ class Course(models.Model):
         validators=[MaxValueValidator(100), MinValueValidator(1)]
     )
     body = models.OneToOneField(CourseBody, blank=True, null=True, on_delete=models.SET_NULL)
+    online = models.BooleanField(default=False)
     timestamp = models.DateTimeField(auto_now_add=True)
     price = models.ForeignKey(Price, blank=True, null=True, on_delete=models.SET_NULL) 
-    buyers = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, null=True)
+    buyers = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
 
     class Meta:
         db_table = 'education_course'
@@ -210,9 +210,9 @@ Y88b. .d88P 888   Y8888 888        888   888   Y8888 888             Y88b  d88P 
                   "Y88P"                            "Y88P"               
 '''
 
-class BoughtCourses(models.Model):
-    id = models.AutoField(primary_key=True)
-    buyer = models.ForeignKey(settings.AUTH_USER_MODEL, blank=False, null=False, on_delete=models.DO_NOTHING) 
+# class BoughtCourses(models.Model):
+#     id = models.AutoField(primary_key=True)
+#     buyer = models.ForeignKey(settings.AUTH_USER_MODEL, blank=False, null=False, on_delete=models.DO_NOTHING) 
 
 
 

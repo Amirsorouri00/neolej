@@ -43,6 +43,39 @@ def test1(request, format=None):
     return JsonResponse({'received data': request.POST}, safe=False, status=200)
 
 
+'''
+888      .d88888b.   .d8888b.  8888888 888b    888        d88P 888      .d88888b.   .d8888b.   .d88888b.  888     888 88888888888 
+888     d88P" "Y88b d88P  Y88b   888   8888b   888       d88P  888     d88P" "Y88b d88P  Y88b d88P" "Y88b 888     888     888     
+888     888     888 888    888   888   88888b  888      d88P   888     888     888 888    888 888     888 888     888     888     
+888     888     888 888          888   888Y88b 888     d88P    888     888     888 888        888     888 888     888     888     
+888     888     888 888  88888   888   888 Y88b888    d88P     888     888     888 888  88888 888     888 888     888     888     
+888     888     888 888    888   888   888  Y88888   d88P      888     888     888 888    888 888     888 888     888     888     
+888     Y88b. .d88P Y88b  d88P   888   888   Y8888  d88P       888     Y88b. .d88P Y88b  d88P Y88b. .d88P Y88b. .d88P     888     
+88888888 "Y88888P"   "Y8888P88 8888888 888    Y888 d88P        88888888 "Y88888P"   "Y8888P88  "Y88888P"   "Y88888P"      888     
+'''
+
+from rest_framework.authtoken.views import ObtainAuthToken
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.authtoken.models import Token
+from rest_framework import status
+class CustomAuthToken(ObtainAuthToken):
+    # @api_view(['POST'])
+    # @authentication_classes((TokenAuthentication,))
+    #@permission_classes((IsAuthenticated,))
+    @csrf_exempt    
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            token, created = Token.objects.get_or_create(user=user)
+            return JsonResponse({
+                'token': token.key,
+                'user_uuid': user.uuid,
+                # 'user_uuid': user.uuid_user.user_uuid.hex,
+                'email': user.email
+            }, safe=False, status = status.HTTP_202_ACCEPTED)
+        else: return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_400_BAD_REQUEST)
+
 
 '''
 888     888  .d8888b.  8888888888 8888888b.              d8888 8888888b. 8888888 
@@ -69,6 +102,7 @@ class UserAPI(APIView):
     errors = []
 
     def get(self, request, format=None, *args, **kwargs):
+        print('in get')
         user_serialized = 'user_serialized temp'
         if request.GET.get('field'):
             field = request.GET.get('field')
@@ -80,23 +114,21 @@ class UserAPI(APIView):
             elif 'email' == field:
                 user_serialized = self.serializer_class(get_object_or_404(self.model, email = request.GET.get('email')))
             else:
-                return JsonResponse({'error': "This url doesn't provide information based on your request information."}, safe=False, status=400)
+                return JsonResponse({'error': "This url doesn't provide information based on your request information."}, safe=False, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
-            user_serialized = self.serializer_class(get_object_or_404(self.model, uuid = request.GET.get('uuid')))
-        return JsonResponse({'response': user_serialized.data}, safe=False, status=200)
+            user_serialized = self.serializer_class(get_object_or_404(self.model, id = request.GET.get('id')))
+        return JsonResponse({'response': user_serialized.data}, safe=False, status=status.HTTP_200_OK)
 
     def post(self, request, format=None, *args, **kwargs):
         print(request.data)
         user_serializer = self.serializer_class(data = request.POST)
         if user_serializer.is_valid():
             user = user_serializer.save()
-            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=200)    
+            return JsonResponse({'received data': request.POST, 'errors': user_serializer.errors}, safe=False, status=status.HTTP_201_CREATED)    
         else:
             print('user_serializer_errors: {0}'.format(user_serializer.errors))
             self.errors.append({'user_serializer': user_serializer.errors})
-            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=500)
- 
-        return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=200)
+            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_400_BAD_REQUEST)
     
     def put(self, request, uuid, format=None, *args, **kwargs):
         print(request.data)
@@ -105,26 +137,26 @@ class UserAPI(APIView):
         user_serializer = self.serializer_class(user, data=request.POST, partial=True)
         if user_serializer.is_valid():
             user = user_serializer.save()
-            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=200)    
+            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_201_CREATED)    
         else:
             print('user_serializer_errors: {0}'.format(user_serializer.errors))
             self.errors.append({'user_serializer': user_serializer.errors})
-            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=500)
- 
-        return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=200)
+            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_400_BAD_REQUEST) 
 
     def delete(self, request, uuid, format=None, *args, **kwargs):
         # delete an object and send a confirmation response
         from django.db.models import ProtectedError
         try:
-            get_object_or_404(self.model, pk=uuid).delete()            
-            return JsonResponse({'deleted data': uuid}, safe=False, status=200)
+            user = get_object_or_404(self.model, pk=uuid)            
+            user.is_active = False
+            user.save()
+            return JsonResponse({'deleted data': uuid}, safe=False, status=status.HTTP_200_OK)
         except ProtectedError:
             error_message = "This object can't be deleted!!"
-            return JsonResponse(error_message, status=500)
+            return JsonResponse(error_message, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
             error_message = {'errors': [str(val)] for val in e}
-            return JsonResponse(error_message, safe=False, status=500)
+            return JsonResponse(error_message, safe=False, status=status.HTTP_400_BAD_REQUEST)
 
 
 '''

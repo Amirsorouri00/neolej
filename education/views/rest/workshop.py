@@ -78,6 +78,8 @@ def test1(request, format=None):
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
+from rest_framework import status
+
 from rest_framework.parsers import MultiPartParser, FormParser
 from file_app.serializers.file_serializer import FileSerializer as FS
 
@@ -95,24 +97,24 @@ class WorkshopAPI(APIView):
             field = request.GET.get('field')
             if 'all' == field:
                 workshops = Workshop.objects.all()
-                workshops_serialized = self.serializer_class(workshops, many=True)
-            elif 'uuid' == field:
-                workshop_serialized = self.serializer_class(get_object_or_404(self.model, uuid = request.GET.get('uuid')))
+                workshop_serialized = self.serializer_class(workshops, many=True)
+            elif 'id' == field:
+                workshop_serialized = self.serializer_class(get_object_or_404(self.model, id = request.GET.get('id')))
             elif 'title' == field:
                 workshop_serialized = self.serializer_class(get_object_or_404(self.model, title = request.GET.get('title')))
             else:
-                return JsonResponse({'error': "This url doesn't provide information based on your request information."}, safe=False, status=400)
+                return JsonResponse({'error': "This url doesn't provide information based on your request information."}, safe=False, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
             workshop_serialized = self.serializer_class(get_object_or_404(self.model, uuid = request.GET.get('uuid')))
-        return JsonResponse({'response': workshop_serialized.data}, safe=False, status=200)
+        return JsonResponse({'response': workshop_serialized.data}, safe=False, status=status.HTTP_200_OK)
 
     def post(self, request, format=None, *args, **kwargs):
         print(request.data)
         workshop_serializer = self.get_workshop_serializer()(data = request.POST)
         if workshop_serializer.is_valid():
             workshop = workshop_serializer.save()
-            # body = CourseBody(description=request.POST.get('description'))
-            body_serializer = self.get_course_body_serializer()(data= request.POST.get('description'))
+            body = CourseBody(description=request.POST.get('description'))
+            body_serializer = self.get_course_body_serializer()(data= request.POST)
             if body_serializer.is_valid():
                 body = body_serializer.save()
                 workshop_serializer.save(body=body)
@@ -151,9 +153,9 @@ class WorkshopAPI(APIView):
         else:
             print('workshop_serializer_errors: {0}'.format(workshop_serializer.errors))
             self.errors.append({'workshop_errors': workshop_serializer.errors})
-            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=500)
+            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_400_BAD_REQUEST)
  
-        return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=200)
+        return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_201_CREATED)
 
     def put(self, request, uuid, format=None, *args, **kwargs):
         print(request.data)
@@ -210,9 +212,9 @@ class WorkshopAPI(APIView):
         else:
             print('workshop_serializer_errors: {0}'.format(workshop_serializer.errors))
             self.errors.append({'workshop_errors': workshop_serializer.errors})
-            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=500)
+            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_400_BAD_REQUEST)
  
-        return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=200)
+        return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_201_CREATED)
 
     def delete(self, request, uuid, format=None, *args, **kwargs):
         # delete an object and send a confirmation response
