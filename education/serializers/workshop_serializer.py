@@ -67,7 +67,7 @@ class PriceSerializer(cserializers.DynamicFieldsModelSerializer):
         model = Price
         fields = ('id', 'uuid', 'online', 'unit', 'cost', 'price')
         read_only_fields = ('uuid', 'price')
-        extra_kwargs = {'cost': {'write_only': True}, 'cost': {'write_only': True}}
+        extra_kwargs = {'cost': {'write_only': True}, 'unit': {'write_only': True}}
     
     def get_price(self, obj):
         return {'cost':obj.get_price('unit'), 'unit': 'Rial'}
@@ -123,7 +123,7 @@ class WorkshopSerializer(CourseSerializer):
     class Meta:
         model = Workshop
         fields= ('id', 'uuid', 'title', 'instructor', 'rate', 'body', 'description', 'workshop_files', 'timestamp'
-        , 'price', 'start_date', 'end_date', 'start_time', 'end_time', 'teacher', 'buyers')
+        , 'price', 'rate_numbers', 'price', 'start_date', 'end_date', 'start_time', 'end_time', 'teacher', 'buyers')
         extra_kwargs = {'instructor': {'write_only': True}}
 
     # def get_files(self, obj):

@@ -125,14 +125,14 @@ class WorkshopAPI(APIView):
                 self.errors.append({'body_serializer': body_serializer.errors})
 
             # price
-            # price_serializer = self.get_price_serializer()(data= request.POST)
-            # if price_serializer.is_valid():
-            #     price = price_serializer.save()
-            #     workshop_serializer.save(price=price)
-            # else:
-            #     print('price_serializer_errors: {0}'.format(price_serializer.errors))
-            #     self.errors.append({'price_serializer': price_serializer.errors})
-            # price = Price.objects.create(online_or_workshop = False, unit = 1, cost = request.POST.get('price'))
+            price_serializer = self.get_price_serializer()(data= request.POST)
+            if price_serializer.is_valid():
+                price = price_serializer.save()
+                workshop_serializer.save(price=price)
+            else:
+                print('price_serializer_errors: {0}'.format(price_serializer.errors))
+                self.errors.append({'price_serializer': price_serializer.errors})
+            price = Price.objects.create(online_or_workshop = False, unit = 1, cost = request.POST.get('price'))
 
             # file
             # print(request.data.getlist('file'))
@@ -182,17 +182,21 @@ class WorkshopAPI(APIView):
                 self.errors.append({'body_serializer': body_serializer.errors})
 
             # price
-            # if workshop.price is not None:
-            #     price = workshop.price
-            #     price_serializer = self.get_price_serializer()(body, data=request.data, partial=True)
-            # else:
-            #     price_serializer = self.get_price_serializer()(data= request.data)
-            # if price_serializer.is_valid():
-            #     price = price_serializer.save()
-            #     workshop_serializer.save(price=price)
-            # else:
-            #     print('price_serializer_errors: {0}'.format(price_serializer.errors))
-            #     self.errors.append({'price_serializer': price_serializer.errors})
+            if workshop.price is not None:
+                print('here1')
+                price = workshop.price
+                price_serializer = self.get_price_serializer()(price, data=request.data, partial=True)
+            else:
+                print('here2')
+                price_serializer = self.get_price_serializer()(data= request.data)
+            if price_serializer.is_valid():
+                print('here3')
+                price = price_serializer.save()
+                workshop_serializer.save(price=price)
+            else:
+                print('here4')
+                print('price_serializer_errors: {0}'.format(price_serializer.errors))
+                self.errors.append({'price_serializer': price_serializer.errors})
 
             # file serializer            
             print(request.data.getlist('file'))
