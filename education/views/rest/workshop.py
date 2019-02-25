@@ -80,6 +80,7 @@ from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from rest_framework import status
 
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from file_app.serializers.file_serializer import FileSerializer as FS
 
@@ -87,6 +88,7 @@ from file_app.serializers.file_serializer import FileSerializer as FS
 @method_decorator([require_http_methods(["GET", "POST", "PUT", "DELETE"])], name='dispatch')
 class WorkshopAPI(APIView):
     parser_classes = (MultiPartParser, FormParser)
+    permission_classes = (IsAuthenticated,)
     serializer_class = WS
     model = Workshop
     errors = []

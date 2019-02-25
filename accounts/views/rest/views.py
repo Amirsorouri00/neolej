@@ -35,7 +35,7 @@ class CustomAuthToken(ObtainAuthToken):
                 # 'user_uuid': user.uuid_user.user_uuid.hex,
                 'email': user.email
             }, safe=False, status = status.HTTP_202_ACCEPTED)
-        else: return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_400_BAD_REQUEST)
+        else: return JsonResponse({'received data': request.POST, 'errors': serializer.errors}, safe=False, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])

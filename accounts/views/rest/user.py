@@ -92,11 +92,13 @@ from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 
 @method_decorator([require_http_methods(["GET", "POST", "PUT", "DELETE"])], name='dispatch')
 class UserAPI(APIView):
     parser_classes = (MultiPartParser, FormParser)
+    permission_classes = (IsAuthenticated,)
     serializer_class = US
     model = User
     errors = []

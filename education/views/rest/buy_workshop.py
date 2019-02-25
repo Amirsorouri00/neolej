@@ -73,10 +73,11 @@ def test1(request, format=None):
 8888888P"   "Y88888P"      888     8888888 888    Y888  "Y8888P88      d88P     888 888       8888888 
 '''                                                                                                   
                                                                                                       
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.views.decorators.http import require_http_methods
+from rest_framework.permissions import IsAuthenticated
 from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from accounts.models import User
 from rest_framework import status
 
@@ -84,6 +85,7 @@ from rest_framework import status
 @method_decorator([require_http_methods(["GET", "POST", "PUT", "DELETE"])], name='dispatch')
 class BuyAPI(APIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
+    permission_classes = (IsAuthenticated,)
     serializer_class = WS
     model = Workshop
     errors = []

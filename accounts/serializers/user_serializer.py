@@ -69,13 +69,13 @@ class UserSerializer(cserializers.DynamicFieldsModelSerializer):
             user.roles.add(role)
         return user
 
-    def update(self, instance, validated_data):
-        instance.email = validated_data.get('email', instance.email)
-        instance.username = validated_data.get('username', instance.username)
-        instance.cell_phone = validated_data.get('cell_phone', instance.cell_phone)
-        # instance.set_password(validated_data['password'])
-        instance.save()
-        return instance
+    # def update(self, instance, validated_data):
+    #     instance.email = validated_data.get('email', instance.email)
+    #     instance.username = validated_data.get('username', instance.username)
+    #     instance.cell_phone = validated_data.get('cell_phone', instance.cell_phone)
+    #     # instance.set_password(validated_data['password'])
+    #     instance.save()
+    #     return instance
 
     def get_excluder(self, obj):
         # return obj.id :Example
