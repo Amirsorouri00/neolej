@@ -30,10 +30,6 @@ Y88b  d88P Y88b. .d88P Y88b. .d88P 888  T88b  Y88b  d88P 888       Y88b  d88P
                                                                               
 '''
 
-class CourseBody(models.Model):
-    id = models.AutoField(primary_key=True)
-    description = models.TextField(blank=True, null=True) 
-
 class CostUnit(models.Model):
     '''
     The CONSTUNIT entries are managed by the system,
@@ -75,6 +71,10 @@ class Price(models.Model):
     def get_price(self, unit):
         return self.cost
 
+class CourseBody(models.Model):
+    id = models.AutoField(primary_key=True)
+    description = models.TextField(blank=True, null=True) 
+
 def get_sentinel_user():
     return get_user_model().objects.get_or_create(email = 'deleted',username='deleted', password=123456)[0]
 
@@ -91,8 +91,14 @@ class Course(models.Model):
     body = models.OneToOneField(CourseBody, blank=True, null=True, on_delete=models.SET_NULL)
     online = models.BooleanField(default=False)
     timestamp = models.DateTimeField(auto_now_add=True)
+    prepayment = models.BooleanField(default=False) # installment or not
+    prepayment_percent = models.IntegerField(
+        default=0,
+        validators=[MaxValueValidator(100), MinValueValidator(1)]
+    )
     price = models.ForeignKey(Price, blank=True, null=True, on_delete=models.SET_NULL) 
     buyers = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
+    # could have installement or not
 
     class Meta:
         db_table = 'education_course'
@@ -112,14 +118,30 @@ class Course(models.Model):
 #                 params={'value': value},
 #            ) 
 
+
+
+
+
+'''
+8888888b. 8888888 .d8888b.   .d8888b.   .d88888b.  888     888 888b    888 88888888888 
+888  "Y88b  888  d88P  Y88b d88P  Y88b d88P" "Y88b 888     888 8888b   888     888     
+888    888  888  Y88b.      888    888 888     888 888     888 88888b  888     888     
+888    888  888   "Y888b.   888        888     888 888     888 888Y88b 888     888     
+888    888  888      "Y88b. 888        888     888 888     888 888 Y88b888     888     
+888    888  888        "888 888    888 888     888 888     888 888  Y88888     888     
+888  .d88P  888  Y88b  d88P Y88b  d88P Y88b. .d88P Y88b. .d88P 888   Y8888     888     
+8888888P" 8888888 "Y8888P"   "Y8888P"   "Y88888P"   "Y88888P"  888    Y888     888     
+'''
+
 class Discount(models.Model):
     # percent = models.CharField(validators=[percentage_validator])
     id = models.AutoField(primary_key=True)
+    uuid = models.UUIDField(db_index=True, unique=True, blank=True, null=True)
     percent = models.IntegerField(
         default=0,
         validators=[MaxValueValidator(100), MinValueValidator(1)]
     )
-    price = models.ForeignKey(Price, blank=True, null=True, on_delete=models.CASCADE, related_name='price_discount')
+    # price = models.ForeignKey(Price, blank=True, null=True, on_delete=models.CASCADE, related_name='price_discount')
 
 class PersonalDiscount(Discount):
     coupon_text = models.CharField(max_length=15, blank=False, null=False)
@@ -130,10 +152,15 @@ class PersonalDiscount(Discount):
 class DateDiscount(Discount):
     start_date = models.DateField(help_text=u'Start Day of the Discount')
     end_date = models.DateField(help_text=u'End Day of the Discount', blank=True, null=True)
+    # Models.many to many for workshop or online courses
 
 class RaceDiscount(DateDiscount):
     coupon_text = models.CharField(max_length=15, blank=True, null=True)
     limit = models.IntegerField(default=0, validators=[MaxValueValidator(100), MinValueValidator(0)])
+    # Models. foreignkey field for workhsop or online courses
+
+
+
 
 
 
@@ -149,7 +176,6 @@ class RaceDiscount(DateDiscount):
                                                                                                                                                                                                                                                                                                                      
 '''                                                                                                                          
 
-
 class Workshop(Course):
     city = models.CharField(max_length=255)
     start_date = models.DateField(help_text=u'Start Day of the Workshop')
@@ -162,13 +188,11 @@ class Workshop(Course):
     # location = LocationField(based_fields=['city'], zoom=7, default=Point(1.0, 1.0))
     # objects = models.GeoManager()
 
-    
 from file_app.models import File
 def workshop_file_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/file_<remark>/<filename>
     return 'workshop_{0}/{1}'.format(instance.workshop.uuid, filename)
     # return 'workshop_{0}/{1}'.format('instance.workshop.uuid', filename)
-
 
 class WorkshopFile(File):
     file = models.FileField(upload_to=workshop_file_directory_path, blank=False, null=False)
@@ -176,44 +200,71 @@ class WorkshopFile(File):
 
 
 
-'''
- .d88888b.  888b    888 888      8888888 888b    888 8888888888       .d8888b.   .d88888b.  888     888 8888888b.   .d8888b.  8888888888 
-d88P" "Y88b 8888b   888 888        888   8888b   888 888             d88P  Y88b d88P" "Y88b 888     888 888   Y88b d88P  Y88b 888        
-888     888 88888b  888 888        888   88888b  888 888             888    888 888     888 888     888 888    888 Y88b.      888        
-888     888 888Y88b 888 888        888   888Y88b 888 8888888         888        888     888 888     888 888   d88P  "Y888b.   8888888    
-888     888 888 Y88b888 888        888   888 Y88b888 888             888        888     888 888     888 8888888P"      "Y88b. 888        
-888     888 888  Y88888 888        888   888  Y88888 888             888    888 888     888 888     888 888 T88b         "888 888        
-Y88b. .d88P 888   Y8888 888        888   888   Y8888 888             Y88b  d88P Y88b. .d88P Y88b. .d88P 888  T88b  Y88b  d88P 888        
- "Y88888P"  888    Y888 88888888 8888888 888    Y888 8888888888       "Y8888P"   "Y88888P"   "Y88888P"  888   T88b  "Y8888P"  8888888888 
-                                                                                                                                         
-'''
-
-# def online_course_file_directory_path(instance, filename):
-#     # file will be uploaded to MEDIA_ROOT/file_<remark>/<filename>
-#     return 'onlineCourse_{0}/{1}'.format(instance.CourseUUID, filename)
-
-# class Online(Course, File):
-
-#     file = models.FileField(upload_to=online_course_file_directory_path, blank=False, null=False)
-#     course = models.ForeignKey(Online, on_delete=models.CASCADE)
 
 '''
-888                            888888b.                              
-888                            888  "88b                             
-888                            888  .88P                             
-888      .d88b.   .d88b.       8888888K.  888  888 888  888 .d8888b  
-888     d88""88b d88P"88b      888  "Y88b 888  888 888  888 88K      
-888     888  888 888  888      888    888 888  888 888  888 "Y8888b. 
-888     Y88..88P Y88b 888      888   d88P Y88b 888 Y88b 888      X88 
-88888888 "Y88P"   "Y88888      8888888P"   "Y88888  "Y88888  88888P' 
-                      888                               888          
-                 Y8b d88P                          Y8b d88P          
-                  "Y88P"                            "Y88P"               
+8888888b.     d8888 Y88b   d88P 888b     d888 8888888888 888b    888 88888888888 
+888   Y88b   d88888  Y88b d88P  8888b   d8888 888        8888b   888     888     
+888    888  d88P888   Y88o88P   88888b.d88888 888        88888b  888     888     
+888   d88P d88P 888    Y888P    888Y88888P888 8888888    888Y88b 888     888     
+8888888P" d88P  888     888     888 Y888P 888 888        888 Y88b888     888     
+888      d88P   888     888     888  Y8P  888 888        888  Y88888     888     
+888     d8888888888     888     888   "   888 888        888   Y8888     888     
+888    d88P     888     888     888       888 8888888888 888    Y888     888     
 '''
+
+class AbstractPayment(models.Model):
+    uuid = models.UUIDField(db_index=True, unique=True, blank=True, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=False, null=False, on_delete=models.SET_NULL) # SetNull
+    invoices = models.ManyToManyField(WorkshopInvoice, blank=True, index=True) # If the workshop price doesn't match the total added 
+
+class WorkshopPayment(AbstractPayment):
+    workshop = models.ForeignKey(Workshop, blank=False, null=False)
+
+
+
+
+'''
+8888888                            d8b                  
+  888                              Y8P                  
+  888                                                   
+  888   88888b.  888  888  .d88b.  888  .d8888b .d88b.  
+  888   888 "88b 888  888 d88""88b 888 d88P"   d8P  Y8b 
+  888   888  888 Y88  88P 888  888 888 888     88888888 
+  888   888  888  Y8bd8P  Y88..88P 888 Y88b.   Y8b.     
+8888888 888  888   Y88P    "Y88P"  888  "Y8888P "Y8888  
+'''
+
+class AbstractInvoice(models.Model):
+    uuid = models.UUIDField(db_index=True, unique=True, blank=True, null=True)
+    amount_to_pay = models.DecimalField(max_digits=10, decimal_places=3)
+    index = models.IntegerField(default=1, blank=False, null=False)
+    due_date = models.DateField(help_text=u'The day that user must pay.') # what's next if he doesn't pay in the day??!!
+    payed_or_not = models.BooleanField(default=False)     
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL) # SetNull                                                  
+                                                        
+class WorkshopInvoice(AbstractInvoice):
+    logs = models.CharField()                                                            
+
+
+# '''
+# 888                            888888b.                              
+# 888                            888  "88b                             
+# 888                            888  .88P                             
+# 888      .d88b.   .d88b.       8888888K.  888  888 888  888 .d8888b  
+# 888     d88""88b d88P"88b      888  "Y88b 888  888 888  888 88K      
+# 888     888  888 888  888      888    888 888  888 888  888 "Y8888b. 
+# 888     Y88..88P Y88b 888      888   d88P Y88b 888 Y88b 888      X88 
+# 88888888 "Y88P"   "Y88888      8888888P"   "Y88888  "Y88888  88888P' 
+#                       888                               888          
+#                  Y8b d88P                          Y8b d88P          
+#                   "Y88P"                            "Y88P"               
+# '''
 
 # class BoughtCourses(models.Model):
 #     id = models.AutoField(primary_key=True)
-#     buyer = models.ForeignKey(settings.AUTH_USER_MODEL, blank=False, null=False, on_delete=models.DO_NOTHING) 
+#     payment = models.ForeignKey(Payment, blank = True, null = True)
+#     buyers = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)                                                                                                                                    
+                                                                                 
 
 
 
@@ -250,5 +301,27 @@ class WorkshopRates(models.Model):
 #         null=False
 #     )
 
-                                                                                       
+
+
+'''
+ .d88888b.  888b    888 888      8888888 888b    888 8888888888       .d8888b.   .d88888b.  888     888 8888888b.   .d8888b.  8888888888 
+d88P" "Y88b 8888b   888 888        888   8888b   888 888             d88P  Y88b d88P" "Y88b 888     888 888   Y88b d88P  Y88b 888        
+888     888 88888b  888 888        888   88888b  888 888             888    888 888     888 888     888 888    888 Y88b.      888        
+888     888 888Y88b 888 888        888   888Y88b 888 8888888         888        888     888 888     888 888   d88P  "Y888b.   8888888    
+888     888 888 Y88b888 888        888   888 Y88b888 888             888        888     888 888     888 8888888P"      "Y88b. 888        
+888     888 888  Y88888 888        888   888  Y88888 888             888    888 888     888 888     888 888 T88b         "888 888        
+Y88b. .d88P 888   Y8888 888        888   888   Y8888 888             Y88b  d88P Y88b. .d88P Y88b. .d88P 888  T88b  Y88b  d88P 888        
+ "Y88888P"  888    Y888 88888888 8888888 888    Y888 8888888888       "Y8888P"   "Y88888P"   "Y88888P"  888   T88b  "Y8888P"  8888888888 
+                                                                                                                                         
+'''
+
+# def online_course_file_directory_path(instance, filename):
+#     # file will be uploaded to MEDIA_ROOT/file_<remark>/<filename>
+#     return 'onlineCourse_{0}/{1}'.format(instance.CourseUUID, filename)
+
+# class Online(Course, File):
+
+#     file = models.FileField(upload_to=online_course_file_directory_path, blank=False, null=False)
+#     course = models.ForeignKey(Online, on_delete=models.CASCADE)
+
                                                                                        

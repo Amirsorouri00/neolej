@@ -116,6 +116,8 @@ class BuyAPI(APIView):
         workshop = get_object_or_404(self.model, uuid = request.data.get('workshop_uuid'))
         for user_uuid in request.data.get('users'):
             print('in for:{0}'.format(user_uuid))
+            # specifically check if user exist or not and don't \
+            # ruin everything just because of one not existed.
             user  = get_object_or_404(User, uuid = user_uuid)
             workshop.buyers.add(user)
         return JsonResponse({'received data': request.data, 'errors': self.errors}, safe=False, status=status.HTTP_200_OK)

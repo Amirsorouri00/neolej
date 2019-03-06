@@ -18,79 +18,8 @@ from accounts.serializers.user_serializer import UserSerializer as US
 from education.models import Course, CourseBody, CostUnit, Price, Workshop, WorkshopFile
 from file_app.serializers.file_serializer import FileSerializer
 from commons import serializers as cserializers
-
-
-'''
- .d8888b.   .d88888b.  888     888 8888888b.   .d8888b.  8888888888       .d8888b.  8888888888 8888888b.  8888888        d8888 888      8888888 8888888888P 8888888888 8888888b.  
-d88P  Y88b d88P" "Y88b 888     888 888   Y88b d88P  Y88b 888             d88P  Y88b 888        888   Y88b   888         d88888 888        888         d88P  888        888   Y88b 
-888    888 888     888 888     888 888    888 Y88b.      888             Y88b.      888        888    888   888        d88P888 888        888        d88P   888        888    888 
-888        888     888 888     888 888   d88P  "Y888b.   8888888          "Y888b.   8888888    888   d88P   888       d88P 888 888        888       d88P    8888888    888   d88P 
-888        888     888 888     888 8888888P"      "Y88b. 888                 "Y88b. 888        8888888P"    888      d88P  888 888        888      d88P     888        8888888P"  
-888    888 888     888 888     888 888 T88b         "888 888                   "888 888        888 T88b     888     d88P   888 888        888     d88P      888        888 T88b   
-Y88b  d88P Y88b. .d88P Y88b. .d88P 888  T88b  Y88b  d88P 888             Y88b  d88P 888        888  T88b    888    d8888888888 888        888    d88P       888        888  T88b  
- "Y8888P"   "Y88888P"   "Y88888P"  888   T88b  "Y8888P"  8888888888       "Y8888P"  8888888888 888   T88b 8888888 d88P     888 88888888 8888888 d8888888888 8888888888 888   T88b 
-                                                                                                                                                                                                                                                                                     
-'''                                                                                                                            
-
-class CourseBodySerializer(cserializers.DynamicFieldsModelSerializer):
-    class Meta:
-        model = CourseBody
-        fields = ('id', 'description', )
-        extra_kwargs = {}
-
-class UnitField(serializers.Field):
-    def to_representation(self, instance):
-        # for client use
-
-        ret = []
-        # print(instance['email'])
-        # for value in instance.unit.all:
-        #     # print(value)
-        #     tmp = {
-        #         "unit_id": value.unit_id,
-        #         "unit_name": value.get_id_display()
-        #     }
-        #     ret.append(tmp)
-        return ret
-
-    def to_internal_value(self, data):
-        # For server-side use
-        data = data.strip('[').rstrip(']')
-        cost_unit = CostUnit.objects.create(unit_id = int(data)).save()
-        unit = {'unit': cost_unit}
-        return unit
-
-class PriceSerializer(cserializers.DynamicFieldsModelSerializer):
-    unit = UnitField(source='*')
-    price = serializers.SerializerMethodField(read_only=True)
-    class Meta:
-        model = Price
-        fields = ('id', 'uuid', 'online', 'unit', 'cost', 'price')
-        read_only_fields = ('uuid', 'price')
-        extra_kwargs = {'cost': {'write_only': True}, 'unit': {'write_only': True}}
-    
-    def get_price(self, obj):
-        return {'cost':obj.get_price('unit'), 'unit': 'Rial'}
-
-
-class CourseSerializer(cserializers.DynamicFieldsModelSerializer):
-    description = CourseBodySerializer(source='body', read_only=True)
-    price = PriceSerializer(required=False, read_only=True)
-    # discount = serializers.SerializerMethodField(read_only=True)
-    teacher = serializers.SerializerMethodField(read_only=True)
-    class Meta:
-        model = Course
-        fields = ('id', 'uuid', 'title', 'instructor', 'rate', 'body', 'timestamp', 'price', 'online')
-        read_only_fields = ()
-        extra_kwargs = {'instructor': {'write_only': True}, 'timestamp': {'write_only': True}}
-
-    def get_teacher(self, obj):
-        return US(obj.instructor, fields=('email', 'email')).data
-    # def get_discount(self, obj):
-    #     # today = datetime.date.now()
-    #     if obj.price:
-    #     else:
-    #         return {}
+from education.serializers.course_serializer import CourseSerializer
+from education.serializers.price_serializer import PriceSerializer
 
 
 '''
@@ -123,7 +52,8 @@ class WorkshopSerializer(CourseSerializer):
     class Meta:
         model = Workshop
         fields= ('id', 'uuid', 'title', 'instructor', 'rate', 'body', 'description', 'workshop_files', 'timestamp'
-        , 'price', 'rate_numbers', 'price', 'start_date', 'end_date', 'start_time', 'end_time', 'teacher', 'buyers')
+        , 'price', 'rate_numbers', 'price', 'start_date', 'end_date', 'start_time', 'end_time', 'teacher', 'buyers'
+        , 'prepayment', 'prepayment_percent')
         extra_kwargs = {'instructor': {'write_only': True}}
 
     # def get_files(self, obj):
