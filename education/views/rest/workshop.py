@@ -11,7 +11,9 @@ Y88b  d88P 888 Y88..88P 888 d88P 888  888 888        888   888  888  888 888 d88
                                                                          888                                       
                                                                          888                                       
 '''                                                                         
-from education.serializers.workshop_serializer import WorkshopSerializer as WS, CourseBodySerializer as CBS, WorkshopFileSerializer as WFS, PriceSerializer as PS
+from education.serializers.workshop_serializer import WorkshopSerializer as WS, WorkshopFileSerializer as WFS, PriceSerializer as PS
+from education.serializers.course_serializer import CourseBodySerializer as CBS
+from education.serializers.price_serializer import PriceSerializer as PS
 from django.http import JsonResponse, HttpResponse
 from education.models import Workshop, CourseBody, Price
 from django.shortcuts import get_object_or_404

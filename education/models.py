@@ -121,49 +121,6 @@ class Course(models.Model):
 
 
 
-
-'''
-8888888b. 8888888 .d8888b.   .d8888b.   .d88888b.  888     888 888b    888 88888888888 
-888  "Y88b  888  d88P  Y88b d88P  Y88b d88P" "Y88b 888     888 8888b   888     888     
-888    888  888  Y88b.      888    888 888     888 888     888 88888b  888     888     
-888    888  888   "Y888b.   888        888     888 888     888 888Y88b 888     888     
-888    888  888      "Y88b. 888        888     888 888     888 888 Y88b888     888     
-888    888  888        "888 888    888 888     888 888     888 888  Y88888     888     
-888  .d88P  888  Y88b  d88P Y88b  d88P Y88b. .d88P Y88b. .d88P 888   Y8888     888     
-8888888P" 8888888 "Y8888P"   "Y8888P"   "Y88888P"   "Y88888P"  888    Y888     888     
-'''
-
-class Discount(models.Model):
-    # percent = models.CharField(validators=[percentage_validator])
-    id = models.AutoField(primary_key=True)
-    uuid = models.UUIDField(db_index=True, unique=True, blank=True, null=True)
-    percent = models.IntegerField(
-        default=0,
-        validators=[MaxValueValidator(100), MinValueValidator(1)]
-    )
-    # price = models.ForeignKey(Price, blank=True, null=True, on_delete=models.CASCADE, related_name='price_discount')
-
-class PersonalDiscount(Discount):
-    coupon_text = models.CharField(max_length=15, blank=False, null=False)
-    person = models.ForeignKey(settings.AUTH_USER_MODEL, blank=False, null=False, on_delete=models.SET(get_sentinel_user))
-    start_date = models.DateField(help_text=u'Start Day of the Discount', blank=True, null=True)
-    end_date = models.DateField(help_text=u'End Day of the Discount', blank=True, null=True)
-
-class DateDiscount(Discount):
-    start_date = models.DateField(help_text=u'Start Day of the Discount')
-    end_date = models.DateField(help_text=u'End Day of the Discount', blank=True, null=True)
-    # Models.many to many for workshop or online courses
-
-class RaceDiscount(DateDiscount):
-    coupon_text = models.CharField(max_length=15, blank=True, null=True)
-    limit = models.IntegerField(default=0, validators=[MaxValueValidator(100), MinValueValidator(0)])
-    # Models. foreignkey field for workhsop or online courses
-
-
-
-
-
-
 '''
 888       888  .d88888b.  8888888b.  888    d8P   .d8888b.  888    888  .d88888b.  8888888b.        .d8888b.   .d88888b.  888     888 8888888b.   .d8888b.  8888888888 
 888   o   888 d88P" "Y88b 888   Y88b 888   d8P   d88P  Y88b 888    888 d88P" "Y88b 888   Y88b      d88P  Y88b d88P" "Y88b 888     888 888   Y88b d88P  Y88b 888        
@@ -197,7 +154,85 @@ def workshop_file_directory_path(instance, filename):
 class WorkshopFile(File):
     file = models.FileField(upload_to=workshop_file_directory_path, blank=False, null=False)
     workshop = models.ForeignKey(Workshop, on_delete=models.CASCADE, related_name='workshop_files')
+                                                 
 
+
+
+
+
+
+'''
+8888888b. 8888888 .d8888b.   .d8888b.   .d88888b.  888     888 888b    888 88888888888 
+888  "Y88b  888  d88P  Y88b d88P  Y88b d88P" "Y88b 888     888 8888b   888     888     
+888    888  888  Y88b.      888    888 888     888 888     888 88888b  888     888     
+888    888  888   "Y888b.   888        888     888 888     888 888Y88b 888     888     
+888    888  888      "Y88b. 888        888     888 888     888 888 Y88b888     888     
+888    888  888        "888 888    888 888     888 888     888 888  Y88888     888     
+888  .d88P  888  Y88b  d88P Y88b  d88P Y88b. .d88P Y88b. .d88P 888   Y8888     888     
+8888888P" 8888888 "Y8888P"   "Y8888P"   "Y88888P"   "Y88888P"  888    Y888     888     
+'''
+
+class AbstractDiscount(models.Model):
+    # percent = models.CharField(validators=[percentage_validator])
+    id = models.AutoField(primary_key=True)
+    uuid = models.UUIDField(db_index=True, unique=True, blank=True, null=True)
+    percent = models.IntegerField(
+        default=0,
+        validators=[MaxValueValidator(100), MinValueValidator(1)]
+    )
+    used = models.BooleanField(default=False)
+    # price = models.ForeignKey(Price, blank=True, null=True, on_delete=models.CASCADE, related_name='price_discount')
+
+class WorkshopDiscount(AbstractDiscount):
+    workshops = models.ManyToManyField(Workshop, blank=True)
+
+class WorkshopPersonalDiscount(WorkshopDiscount):
+    coupon_text = models.CharField(max_length=15, blank=False, null=False)
+    person = models.ForeignKey(settings.AUTH_USER_MODEL, blank=False, null=False, on_delete=models.SET(get_sentinel_user))
+    start_date = models.DateField(help_text=u'Start Day of the Discount', blank=True, null=True)
+    end_date = models.DateField(help_text=u'End Day of the Discount', blank=True, null=True)
+
+class WorkshopDateDiscount(WorkshopDiscount):
+    start_date = models.DateField(help_text=u'Start Day of the Discount')
+    end_date = models.DateField(help_text=u'End Day of the Discount', blank=True, null=True)
+    # Models.many to many for workshop or online courses
+
+class WorkshopRaceDiscount(WorkshopDiscount):
+    coupon_text = models.CharField(max_length=15, blank=True, null=True)
+    limit = models.IntegerField(default=0, validators=[MaxValueValidator(100), MinValueValidator(0)])
+    used = None
+    # Models. foreignkey field for workhsop or online courses
+
+class DiscountType(models.Model):
+    '''
+    The CONSTUNIT entries are managed by the system,
+    automatically created via a Django data migration.
+    '''
+    RACEDISCOUNT = 1
+    DATEDISCOUNT = 2
+    PERSONALDISCOUNT = 3
+    
+    DISCOUNT_CHOICES = (
+        (RACEDISCOUNT, 'RaceDiscount'),
+        (DATEDISCOUNT, 'DateDiscount'),
+        (PERSONALDISCOUNT, 'PersonalDiscount'),
+    )
+    id = models.AutoField(primary_key=True)
+    type_id = models.PositiveSmallIntegerField(default=1, choices=DISCOUNT_CHOICES)
+    def __str__(self):
+        return self.get_id_display()
+    
+    def get_id_display(self):
+        for key, value in self.DISCOUNT_CHOICES:
+            if self.type_id == key:
+                return value
+        return 'unknown unit.'
+
+    def get_role(self):
+        for key, value in self.DISCOUNT_CHOICES:
+            if self.type_id == value:
+                return {'discount_type_id':key, 'discount_type': value}
+        return 'unknown unit.'
 
 
 
@@ -214,12 +249,13 @@ class WorkshopFile(File):
 
 class AbstractPayment(models.Model):
     uuid = models.UUIDField(db_index=True, unique=True, blank=True, null=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=False, null=False, on_delete=models.SET_NULL) # SetNull
-    invoices = models.ManyToManyField(WorkshopInvoice, blank=True, index=True) # If the workshop price doesn't match the total added 
+    discount_type = models.ForeignKey(DiscountType, blank=True, null=True, on_delete=models.SET_NULL)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=False, null=False, on_delete=models.SET(get_sentinel_user)) # SetNull
+    pending = models.BooleanField(default=True)
+
 
 class WorkshopPayment(AbstractPayment):
-    workshop = models.ForeignKey(Workshop, blank=False, null=False)
-
+    workshop = models.ForeignKey(Workshop, blank=False, null=False, on_delete = models.CASCADE)
 
 
 
@@ -243,7 +279,10 @@ class AbstractInvoice(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL) # SetNull                                                  
                                                         
 class WorkshopInvoice(AbstractInvoice):
-    logs = models.CharField()                                                            
+    payment = models.ForeignKey(WorkshopPayment, blank=True, null=True, db_index=True, related_name='invoice', on_delete=models.SET_NULL) # If the workshop price doesn't match the total added 
+
+
+
 
 
 # '''
@@ -282,7 +321,7 @@ Y88b. .d88P      X88 Y8b.     888          888  T88b  888  888 Y88b. Y8b.       
 class WorkshopRates(models.Model):
     uuid = models.UUIDField(db_index=True, unique=True, blank=True, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=False, null=False, on_delete=models.CASCADE, related_name='user_rate')
-    workshop = models.ForeignKey(Workshop, blank=False, null=False, on_delete=models.CASCADE, related_name='course_user_rate')
+    workshop = models.ForeignKey(Workshop, blank=False, null=False, db_index=True, on_delete=models.CASCADE, related_name='course_user_rate')
     rate = models.IntegerField(
         default=0,
         validators=[MaxValueValidator(100), MinValueValidator(1)],

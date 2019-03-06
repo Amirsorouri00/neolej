@@ -11,9 +11,9 @@ Y88b  d88P 888 Y88..88P 888 d88P 888  888 888        888   888  888  888 888 d88
                                                                          888                                       
                                                                          888                                       
 '''                                                                         
-from education.serializers.discount_serializer import DiscountSerializer as DS
+from education.serializers.discount_serializer import WorkshopDiscountSerializer as WDS
 from django.http import JsonResponse, HttpResponse
-from education.models import Discount
+from education.models import WorkshopDiscount
 from django.shortcuts import get_object_or_404
 
 '''
@@ -30,7 +30,7 @@ from django.shortcuts import get_object_or_404
 
 def test2(request, format=None):
     print(request.POST)
-    discounts = Discount.objects.all()
+    discounts = WorkshopDiscount.objects.all()
     discounts_serializer = DS(discounts, many=True)
     print('Discount serialized result = {0}'.format(discounts_serializer.data)) 
     return JsonResponse({'received data': discounts_serializer.data}, safe=False, status=200)

@@ -12,7 +12,6 @@ Y88b  d88P 888 Y88..88P 888 d88P 888  888 888        888   888  888  888 888 d88
                                                                          888                                       
 '''                                                                         
 from django.http import JsonResponse, HttpResponse
-from education.models import Discount, PersonalDiscount, DateDiscount, RaceDiscount
 from django.shortcuts import get_object_or_404
 from commons import serializers as cserializers
 
@@ -29,23 +28,54 @@ from commons import serializers as cserializers
 8888888P" 8888888 "Y8888P"   "Y8888P"   "Y88888P"   "Y88888P"  888    Y888     888     
 '''                                                                                       
                                                                                        
-from education.models import Discount, PersonalDiscount, RaceDiscount, DateDiscount                                                                                    
+from education.models import AbstractDiscount, WorkshopDiscount, WorkshopPersonalDiscount, WorkshopRaceDiscount, WorkshopDateDiscount                                                                                    
+from education.models import DiscountType
+from rest_framework import serializers
+
+
+class DiscountTypeSerializer(serializers.Field):
+    def to_representation(self, instance):
+        # for client use
+
+        ret = []
+        # print(instance['email'])
+        # for value in instance.unit.all:
+        #     # print(value)
+        #     tmp = {
+        #         "unit_id": value.unit_id,
+        #         "unit_name": value.get_id_display()
+        #     }
+        #     ret.append(tmp)
+        return ret
+
+    def to_internal_value(self, data):
+        # For server-side use
+        data = data.strip('[').rstrip(']')
+        discount_type = DiscountType.objects.create(type_id = int(data)).save()
+        type_res = {'type': discount_type}
+        return type_res
+
 class DiscountSerializer(cserializers.DynamicFieldsModelSerializer):
     class Meta:
-        model = Discount
+        model = AbstractDiscount
         fields = ('id', 'uuid', 'percent')
 
-class PersonalDiscountSerializer(DiscountSerializer):
+class WorkshopDiscountSerializer(DiscountSerializer):
     class Meta:
-        model = PersonalDiscount
-        fields = ('id', 'uuid', 'percent', 'coupon_text', 'person', 'start_date', 'end_date')
+        model = WorkshopDiscount
+        fields = ('id', 'uuid', 'percent', 'workshops')
 
-class DateDiscountSerializer(DiscountSerializer):
+class WorkshopPersonalDiscountSerializer(WorkshopDiscountSerializer):
     class Meta:
-        model = DateDiscount
-        fields = ('id', 'uuid', 'percent', 'start_date', 'end_date')
+        model = WorkshopPersonalDiscount
+        fields = ('id', 'uuid', 'percent', 'coupon_text', 'person', 'start_date', 'end_date', 'workshops', 'used')
 
-class RaceDiscountSerializer(DiscountSerializer):
+class WorkshopDateDiscountSerializer(WorkshopDiscountSerializer):
     class Meta:
-        model = RaceDiscount
-        fields = ('id', 'uuid', 'percent', 'coupon_text', 'limit')
+        model = WorkshopDateDiscount
+        fields = ('id', 'uuid', 'percent', 'start_date', 'end_date', 'workshops', 'used')
+
+class WorkshopRaceDiscountSerializer(WorkshopDiscountSerializer):
+    class Meta:
+        model = WorkshopRaceDiscount
+        fields = ('id', 'uuid', 'percent', 'coupon_text', 'limit', 'workshops')

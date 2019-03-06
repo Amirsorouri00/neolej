@@ -1,4 +1,5 @@
-from education.serializers.workshop_serializer import WorkshopSerializer as WS, CourseBodySerializer as CBS, WorkshopFileSerializer as WFS
+from education.serializers.workshop_serializer import WorkshopSerializer as WS, WorkshopFileSerializer as WFS
+from education.serializers.course_serializer import CourseBodySerializer as CBS
 from django.http import JsonResponse, HttpResponse
 from education.models import WorkshopFile
 from django.shortcuts import get_object_or_404

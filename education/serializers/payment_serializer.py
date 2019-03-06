@@ -27,13 +27,38 @@ from commons import serializers as cserializers
   888   888   Y8888    Y888P    Y88b. .d88P  888  Y88b  d88P 888        
 8888888 888    Y888     Y8P      "Y88888P" 8888888 "Y8888P"  8888888888 
 '''
-
-class WorkshopInvoiceSerializer(cserializers.DynamicFieldsModelSerializer):
+from education.models import AbstractInvoice, AbstractPayment
+class AbstractInvoiceSerializer(cserializers.DynamicFieldsModelSerializer):
     class Meta:
-        model = WorkshopInvoice
+        model = AbstractInvoice
         fields = ('id', 'uuid', 'amount_to_pay', 'index', 'due_date', 'payed_or_not', 'created_by')
 
+
+class WorkshopInvoiceSerializer(AbstractInvoiceSerializer):
+    class Meta:
+        model = WorkshopInvoice
+        fields = ('id', 'uuid', 'amount_to_pay', 'index', 'due_date', 'payed_or_not', 'created_by', 'payment')
+
+'''
+8888888b.     d8888 Y88b   d88P 888b     d888 8888888888 888b    888 88888888888 
+888   Y88b   d88888  Y88b d88P  8888b   d8888 888        8888b   888     888     
+888    888  d88P888   Y88o88P   88888b.d88888 888        88888b  888     888     
+888   d88P d88P 888    Y888P    888Y88888P888 8888888    888Y88b 888     888     
+8888888P" d88P  888     888     888 Y888P 888 888        888 Y88b888     888     
+888      d88P   888     888     888  Y8P  888 888        888  Y88888     888     
+888     d8888888888     888     888   "   888 888        888   Y8888     888     
+888    d88P     888     888     888       888 8888888888 888    Y888     888     
+'''                                                                                                                                                               
+
+from education.serializers.discount_serializer import DiscountTypeSerializer
+class AbstractPaymentSerializer(cserializers.DynamicFieldsModelSerializer):
+    discount_type = DiscountTypeSerializer(source='*')
+    class Meta:
+        model = AbstractPayment
+        fields = ('id', 'uuid', 'user', 'discount_type', 'pending')
+
 class WorkshopPaymentSerializer(cserializers.DynamicFieldsModelSerializer):
+    discount_type = DiscountTypeSerializer(source='*')
     class Meta:
         model = WorkshopPayment
-        fields = ('id', 'uuid', 'user', 'invoices')
+        fields = ('id', 'uuid', 'user', 'discount_type', 'pending', 'workshop')
