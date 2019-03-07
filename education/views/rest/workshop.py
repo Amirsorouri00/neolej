@@ -134,7 +134,7 @@ class WorkshopAPI(APIView):
             else:
                 print('price_serializer_errors: {0}'.format(price_serializer.errors))
                 self.errors.append({'price_serializer': price_serializer.errors})
-            price = Price.objects.create(online_or_workshop = False, unit = 1, cost = request.POST.get('price'))
+            # price = Price.objects.create(online_or_workshop = False, unit = 1, cost = request.POST.get('price'))
 
             # file
             # print(request.data.getlist('file'))
@@ -158,7 +158,6 @@ class WorkshopAPI(APIView):
             print('workshop_serializer_errors: {0}'.format(workshop_serializer.errors))
             self.errors.append({'workshop_errors': workshop_serializer.errors})
             return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_400_BAD_REQUEST)
- 
         return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_201_CREATED)
 
     def put(self, request, uuid, format=None, *args, **kwargs):

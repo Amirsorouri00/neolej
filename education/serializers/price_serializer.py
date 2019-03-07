@@ -15,13 +15,12 @@ import datetime
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from accounts.serializers.user_serializer import UserSerializer as US
-from education.models import Price
+from education.models import Price, CostUnit
 from commons import serializers as cserializers
 
 class UnitField(serializers.Field):
     def to_representation(self, instance):
         # for client use
-
         ret = []
         # print(instance['email'])
         # for value in instance.unit.all:
@@ -36,7 +35,12 @@ class UnitField(serializers.Field):
     def to_internal_value(self, data):
         # For server-side use
         data = data.strip('[').rstrip(']')
-        cost_unit = CostUnit.objects.create(unit_id = int(data)).save()
+        print(data)
+        if'rial' == data.lower():
+            cost_unit = CostUnit.objects.create(unit_id = CostUnit.RIAL)
+        else:
+            cost_unit = CostUnit.objects.create(unit_id = CostUnit.RIAL)
+        print(cost_unit)
         unit = {'unit': cost_unit}
         return unit
 

@@ -69,7 +69,7 @@ class WorkshopPersonalDiscountSerializer(WorkshopDiscountSerializer):
     class Meta:
         model = WorkshopPersonalDiscount
         fields = ('id', 'uuid', 'percent', 'coupon_text', 'person', 'start_date', 'end_date', 'workshops', 'used')
-        read_only_fields = ('used')
+        read_only_fields = ['used']
         
 class WorkshopDateDiscountSerializer(WorkshopDiscountSerializer):
     class Meta:

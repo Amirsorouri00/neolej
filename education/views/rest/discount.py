@@ -58,6 +58,7 @@ def test1(request, format=None):
 
 from education.serializers.discount_serializer import WorkshopPersonalDiscountSerializer as WPDS
 from education.models import WorkshopPersonalDiscount
+from commons.permission_controllers import RestFrameworkPermissionController
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.views.decorators.http import require_http_methods
 from rest_framework.permissions import IsAuthenticated
@@ -68,10 +69,17 @@ from rest_framework import status
 
 class WorkshopPersonalDiscountAPI(APIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, RestFrameworkPermissionController)
     serializer_class = WPDS
     model = WorkshopPersonalDiscount
     errors = []
+
+    def dispatch(self, request, uuid = None, format=None, *args, **kwargs):
+        if 'Get' == request.method:
+            self.permission_classes = (IsAuthenticated,)
+        else:
+            self.permission_classes = (IsAuthenticated, RestFrameworkPermissionController)
+        return super().dispatch(request, uuid = uuid, format=None, *args, **kwargs)
 
     def get(self, request, format=None, *args, **kwargs):
         if request.GET.get('field'):
@@ -106,6 +114,7 @@ class WorkshopPersonalDiscountAPI(APIView):
     
     def put(self, request, uuid, format=None, *args, **kwargs):
         print(request.data)
+        print(uuid)
         workshop_personal_discount = get_object_or_404(self.model, uuid = uuid)
         personal_discount_serializer = self.serializer_class(workshop_personal_discount, data = request.data, partial=True)
         if personal_discount_serializer.is_valid():
