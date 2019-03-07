@@ -42,10 +42,10 @@ urlpatterns = [
                 path('personal/<str:uuid>/', WorkshopPersonalDiscountAPI.as_view(), name='rest_workshop_personal_discount_pud'),
 
                 path('date/', WorkshopDateDiscountAPI.as_view(), name='rest_workshop_date_discount'),
-                path('date/<int:uuid>/', WorkshopDateDiscountAPI.as_view(), name='rest_workshop_date_discount_pud'),
+                path('date/<str:uuid>/', WorkshopDateDiscountAPI.as_view(), name='rest_workshop_date_discount_pud'),
 
                 path('race/', WorkshopRaceDiscountAPI.as_view(), name='rest_workshop_race_discount'),
-                path('race/<int:uuid>/', WorkshopRaceDiscountAPI.as_view(), name='rest_workshop_race_discount_pud'),
+                path('race/<str:uuid>/', WorkshopRaceDiscountAPI.as_view(), name='rest_workshop_race_discount_pud'),
 
                 # path('test2/', discount_file_test2, name='rest_discount_test2'),
                 # path('test1/', discount_file_test1, name='rest_discount_test1'),

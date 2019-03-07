@@ -153,10 +153,17 @@ from education.serializers.discount_serializer import WorkshopDateDiscountSerial
 from education.models import WorkshopDateDiscount
 class WorkshopDateDiscountAPI(APIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, RestFrameworkPermissionController)
     serializer_class = WDDS
     model = WorkshopDateDiscount
     errors = []
+
+    def dispatch(self, request, uuid = None, format=None, *args, **kwargs):
+        if 'Get' == request.method:
+            self.permission_classes = (IsAuthenticated,)
+        else:
+            self.permission_classes = (IsAuthenticated, RestFrameworkPermissionController)
+        return super().dispatch(request, uuid = uuid, format=None, *args, **kwargs)
 
     def get(self, request, format=None, *args, **kwargs):
         if request.GET.get('field'):
