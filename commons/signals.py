@@ -31,31 +31,31 @@ def all_models_validation(instance, *args, **kwargs):
 from education.models import Price, WorkshopRates, WorkshopPersonalDiscount, WorkshopDateDiscount, WorkshopRaceDiscount                                                                                                     
 
 @receiver(post_save, sender=WorkshopRates)
-def create_workshop_UUID(sender, instance=None, created=True, **kwargs):
+def create_workshop_rate_UUID(sender, instance=None, created=True, **kwargs):
     if created:
         instance.uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(instance.id))
         instance.save()
 
 @receiver(post_save, sender=Price)
-def create_workshop_UUID(sender, instance=None, created=True, **kwargs):
+def create_price_UUID(sender, instance=None, created=True, **kwargs):
     if created:
         instance.uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(instance.id))
         instance.save()
 
 @receiver(post_save, sender=WorkshopPersonalDiscount)
-def create_workshop_UUID(sender, instance=None, created=True, **kwargs):
+def create_workshop_personal_discount_UUID(sender, instance=None, created=True, **kwargs):
     if created:
         instance.uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(instance.id))
         instance.save()
 
 @receiver(post_save, sender=WorkshopDateDiscount)
-def create_workshop_UUID(sender, instance=None, created=True, **kwargs):
+def create_workshop_date_discount_UUID(sender, instance=None, created=True, **kwargs):
     if created:
         instance.uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(instance.id))
         instance.save()
 
 @receiver(post_save, sender=WorkshopRaceDiscount)
-def create_workshop_UUID(sender, instance=None, created=True, **kwargs):
+def create_workshop_race_discount_UUID(sender, instance=None, created=True, **kwargs):
     if created:
         instance.uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(instance.id))
         instance.save()
@@ -69,22 +69,22 @@ def create_workshop_UUID(sender, instance=None, created=True, **kwargs):
         instance.save()
 
 @receiver(post_save, sender=WorkshopInvoice)
-def create_workshop_UUID(sender, instance=None, created=True, **kwargs):
+def create_workshop_invoice_UUID(sender, instance=None, created=True, **kwargs):
     if created:
         instance.uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(instance.id))
         instance.save()
 
 @receiver(post_save, sender=WorkshopPayment)
-def create_workshop_UUID(sender, instance=None, created=True, **kwargs):
+def create_workshop_payment_UUID(sender, instance=None, created=True, **kwargs):
     if created:
         instance.uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(instance.id))
         instance.save()
 
-@receiver(post_save, sender=WorkshopRates)
-def create_workshop_UUID(sender, instance=None, created=True, **kwargs):
-    if created:
-        instance.uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(instance.id))
-        instance.save()
+# @receiver(post_save, sender=WorkshopRates)
+# def create_workshop_UUID(sender, instance=None, created=True, **kwargs):
+#     if created:
+#         instance.uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(instance.id))
+#         instance.save()
 
 '''
 888     888  .d8888b.  8888888888 8888888b.  
