@@ -11,8 +11,8 @@ Y88b  d88P 888 Y88..88P 888 d88P 888  888 888        888   888  888  888 888 d88
                                                                          888                                       
                                                                          888                                       
 '''                                                                         
-from education.serializers.payment_serializer import WorkshopInvoiceSerializer as WIS
-from education.models import WorkshopInvoice
+from education.serializers.payment_serializer import WorkshopInvoiceSerializer as WIS, WorkshopPaymentSerializer as WPS
+from education.models import WorkshopInvoice, WorkshopPayment
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 
@@ -88,10 +88,12 @@ class WorkshopInvoiceApi(APIView):
         return JsonResponse({'response': workshop_invoices_serialized.data}, safe=False, status=status.HTTP_202_ACCEPTED)
 
     def post(self, request, format=None, *args, **kwargs):
+        self.errors = []
         print(request.data)
+        print(request.data.get('invoices'))
         valid = True
         approved_invoices = []
-        for invoice in request.POST.get('invoices'):
+        for invoice in request.data.get('invoices'):
             invoice_serializer = self.serializer_class(data = invoice)
             if invoice_serializer.is_valid():
                 invoice = invoice_serializer.save()
@@ -99,16 +101,25 @@ class WorkshopInvoiceApi(APIView):
             else:
                 valid = False
                 self.errors.append({'invoice_serializer_errors': invoice_serializer.errors})
-
         if(valid):
-            return JsonResponse({'received data': request.data, 'errors': self.errors}, safe=False, status=status.HTTP_200_OK)
+            payment_serializer = self.get_workshop_payment_serializer()(data=request.data)
+            if payment_serializer.is_valid():
+                payment = payment_serializer.save()
+                for invoice in approved_invoices:
+                    invoice.payment = payment
+                    invoice.save()
+                return JsonResponse({'received data': request.data, 'errors': self.errors}, safe=False, status=status.HTTP_200_OK)
+            else:
+                self.errors.append({'workshop_payment_serializer_errors': payment_serializer.errors})
         else:
             for invoice in approved_invoices:
                 self.messages.append(self.delete(request, invoice.uuid))
                 # invoice.delete()
             print('workshop_invoice_serializer_errors: {0}'.format(invoice_serializer.errors))
             self.errors.append({'workshop_invoice_serializer_errors': invoice_serializer.errors})
-            return JsonResponse({'received data': request.data, 'errors': self.errors, 'messages': self.messages}, safe=False, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({'received data': request.data, 'errors': self.errors, 'messages': self.messages}, safe=False, status=status.HTTP_400_BAD_REQUEST)
+
+    # def put(self, request, format=None, *args, **kwargs):
 
     def delete(self, request, uuid, format=None, *args, **kwargs):
         # delete an object and send a confirmation response
@@ -123,3 +134,9 @@ class WorkshopInvoiceApi(APIView):
         except Exception as e:
             error_message = {'errors': [str(val)] for val in e}
             return JsonResponse(error_message, safe=False, status=500)
+
+    
+    def get_workshop_payment_serializer(self):
+        if 'get' == self.request.method:
+            return WPS
+        else: return WPS
