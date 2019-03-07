@@ -22,6 +22,24 @@ def general_permission_controller(user, **kwargs):
 
 
 
+from rest_framework.permissions import IsAuthenticated
+
+class RestFrameworkPermissionController(IsAuthenticated):
+    def has_permission(self, request, view):
+        resp = super(RestFrameworkPermissionController, self).has_permission(request, view)
+        print('Inside RestFrameworkPermissionController and user is: {0}, {1}'.format(request.user, request.user.is_superuser))
+        roles = request.user.roles.all()
+        if roles:
+            for role in request.user.roles.all():
+                if 4 == role.role_id or request.user.is_superuser:
+                    if request.user.is_active and resp:
+                        return True
+        else:
+            if request.user.is_superuser and request.user.is_active and resp:    
+                return True
+        return False
+        # return getattr(request.user, "user_type", None) == "A" and resp
+
 
 
 
