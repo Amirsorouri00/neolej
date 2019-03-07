@@ -103,6 +103,11 @@ class UserAPI(APIView):
     model = User
     errors = []
 
+    def dispatch(self, request, uuid = None, format=None, *args, **kwargs):
+        if 'POST' == request.method:
+            self.permission_classes = ()
+        return super().dispatch(request, uuid = uuid, format=None, *args, **kwargs)
+
     def get(self, request, format=None, *args, **kwargs):
         print('in get')
         user_serialized = 'user_serialized temp'
