@@ -55,7 +55,8 @@ INSTALLED_APPS = [
     'accounts',
     'education',
     'file_app',
-    'commons'
+    'commons',
+    'zarrinpal'
 ]
 
 REST_FRAMEWORK = {
