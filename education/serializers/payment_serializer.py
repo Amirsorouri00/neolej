@@ -67,5 +67,5 @@ class WorkshopInvoiceSerializer(AbstractInvoiceSerializer):
     payment = WorkshopPaymentSerializer(read_only = True)
     class Meta:
         model = WorkshopInvoice
-        fields = ('id', 'uuid', 'amount_to_pay', 'index', 'due_date', 'payed_or_not', 'created_by', 'payment')
+        fields = ('id', 'uuid', 'amount_to_pay', 'index', 'due_date', 'payed_or_not', 'created_by', 'payment', 'logs', 'authority', 'ref_id')
         read_only_fields = ['payed_or_not', 'id', 'uuid', 'created_by', 'payment']
