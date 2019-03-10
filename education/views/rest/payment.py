@@ -119,7 +119,16 @@ class WorkshopInvoiceApi(APIView):
             self.errors.append({'workshop_invoice_serializer_errors': invoice_serializer.errors})
         return JsonResponse({'received data': request.data, 'errors': self.errors, 'messages': self.messages}, safe=False, status=status.HTTP_400_BAD_REQUEST)
 
-    # def put(self, request, format=None, *args, **kwargs):
+    def put(self, request, uuid, format=None, *args, **kwargs):
+        invoice = get_object_or_404(self.model, pk=uuid)
+        invoice_serializer = self.serializer_class(invoice, data=request.data, partial=True)
+        if invoice_serializer.is_valid():
+            invoice = invoice_serializer.save()
+            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_201_CREATED)
+        else:
+            self.errors.append({'invoice_serialzier_errors': invoice_serializer.errors})
+            print('invoice_serialzier_errors: {0}'.format(invoice_serializer.errors))
+            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, uuid, format=None, *args, **kwargs):
         # delete an object and send a confirmation response
@@ -140,3 +149,67 @@ class WorkshopInvoiceApi(APIView):
         if 'get' == self.request.method:
             return WPS
         else: return WPS
+
+
+from education.models import Workshop
+import datetime
+class WorkshopPaymentApi(APIView):
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+    permission_classes = (IsAuthenticated, )
+    serializer_class = WPS
+    model = WorkshopPayment
+    errors = []
+    messages = []
+
+    def get(self, request, format=None, *args, **kwargs):
+        if request.GET.get('field'):
+            field = request.GET.get('field')
+            if 'all' == field:
+                workshop_payments = self.model.objects.all()
+                workshop_payments_serialized = self.serializer_class(workshop_payments, many=True)
+            elif 'uuid' == field:
+                workshop_payments = get_object_or_404(WorkshopPayment, uuid = request.GET.get('uuid'))
+                workshop_payments_serialized = self.serializer_class(workshop_payments)
+            # elif 'workshop_uuid' == field:
+            #     workshop_invoices = get_object_or_404(self.model, workshops__uuid = request.GET.get('user_uuid'))
+            #     workshop_invoices_serialized = self.serializer_class(workshop_invoices)
+            else:
+                return JsonResponse({'error': "This url doesn't provide information based on your request information."}, safe=False, status=status.HTTP_404_NOT_FOUND)
+        else:
+            workshop_payments = self.model.objects.filter(user_id = request.user.id)
+            workshop_payments_serialized = self.serializer_class(workshop_payments, many=True)
+        return JsonResponse({'response': workshop_payments_serialized.data}, safe=False, status=status.HTTP_202_ACCEPTED)
+
+    def post(self, request, format=None, *args, **kwargs):
+        self.errors = []
+        print(request.data)
+        workshop = get_object_or_404(Workshop, uuid=request.data.get('workshop'))
+        user = get_object_or_404(User, uuid=request.data.get('user'))
+        payment_serializer = self.serializer_class(data={'workshop': workshop.id, 'user': user.id})
+        if payment_serializer.is_valid():
+            from django.db.models import ProtectedError
+            try:
+                payment = payment_serializer.save()
+                workshop = get_object_or_404(Workshop, uuid = request.data.get('workshop'))
+                invoice = WorkshopInvoice.objects.create(amount_to_pay = workshop.price.get_price('rial'), index = 1, \
+                    due_date = datetime.datetime.now().strftime('%Y-%m-%d'), created_by = request.user, payment = payment)
+                invoice_serializer = WIS(invoice)
+                return JsonResponse({'received data': request.data, 'payment': invoice_serializer.data, 'errors': self.errors, 'messages': self.messages}, safe=False, status=status.HTTP_201_CREATED)
+                
+            except ProtectedError:
+                error_message = "This object can't be deleted!!"
+                return JsonResponse(error_message, status=500)
+            except Exception as e:
+                print(e)
+                error_message = {'errors': '[str(val)] for val in e'}
+                # return HttpResponse({'error_message': error_message, 'e': e}, safe=False, status=500)
+                return HttpResponse({'error_message': error_message, 'e': e})
+
+        else:
+            self.errors.append({'workshop_payment_serializer_errors': payment_serializer.errors})
+            print('workshop_payment_serializer_errors: {0}'.format(invoice_serializer.errors))
+            return JsonResponse({'received data': request.data, 'payment': 'There is bug on creating payment from server. Plz Call Us ASAP for any help.', 'errors': self.errors, 'messages': self.messages}, safe=False, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+        

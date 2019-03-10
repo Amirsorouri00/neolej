@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from education.views.rest.workshop import test1 as workshop_test1, test2 as workshop_test2, WorkshopAPI
 from education.views.rest.workshop_file import test2 as workshop_file_test2
 from education.views.rest.discount import test2 as discount_file_test2, test1 as discount_file_test1
-from education.views.rest.payment import test1 as invoice_test1, test2 as invoice_test2, WorkshopInvoiceApi
+from education.views.rest.payment import test1 as invoice_test1, test2 as invoice_test2, WorkshopInvoiceApi, WorkshopPaymentApi
 from education.views.rest.discount import WorkshopDateDiscountAPI, WorkshopPersonalDiscountAPI, WorkshopRaceDiscountAPI
 from education.views.rest.buy_workshop import BuyAPI
 
@@ -34,6 +34,12 @@ urlpatterns = [
                     # path('test2/', discount_file_test2, name='rest_discount_test2'),
                     # path('test1/', discount_file_test1, name='rest_discount_test1'),
                 ], 'education'), namespace='rest_workshop_invoice')),     
+                path('payment/', include(([
+                    path('', WorkshopPaymentApi.as_view(), name='rest_workshop_payment'),
+                    path('<int:uuid>/', WorkshopPaymentApi.as_view(), name='rest_workshop_payment_pud'),
+                    # path('test2/', discount_file_test2, name='rest_discount_test2'),
+                    # path('test1/', discount_file_test1, name='rest_discount_test1'),
+                ], 'education'), namespace='rest_workshop_payment')), 
             ], 'education'), namespace='rest_workshop_buy')),
 
 
@@ -62,7 +68,6 @@ urlpatterns = [
             path('test2/', discount_file_test2, name='rest_discount_test2'),
             path('test1/', discount_file_test1, name='rest_discount_test1'),
         ], 'education'), namespace='rest_discount')),
-
 
     ], 'education'), namespace='rest')),
 ]
