@@ -280,6 +280,10 @@ class AbstractInvoice(models.Model):
                                                         
 class WorkshopInvoice(AbstractInvoice):
     payment = models.ForeignKey(WorkshopPayment, blank=True, null=True, db_index=True, related_name='invoice', on_delete=models.SET_NULL) # If the workshop price doesn't match the total added 
+    logs = models.CharField(max_length=127, blank=True, null=True)
+    authority = models.CharField(max_length=127, blank=True, null=True)
+    ref_id = models.CharField(max_length=127, blank=True, null=True)
+
 
 
 
