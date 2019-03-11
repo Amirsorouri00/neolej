@@ -10,7 +10,7 @@ from rest_framework import status
 from education.models import WorkshopInvoice
 
 MERCHANT = '9f35b4e2-4022-11e9-ad5c-000c295eb8fc'
-client = Client('https://sandbox.zarinpal.com/pg/services/WebGate/wsdl')
+client = Client('https://www.zarinpal.com/pg/services/WebGate/wsdl')
 # amount = 1000  # Toman / Required
 description = "توضیحات مربوط به تراکنش را در این قسمت وارد کنید"  # Required
 # email = 'amirsorouri26@gmail.com'  # Optional
@@ -31,7 +31,7 @@ def send_request(request):
     mobile = request.user.cell_phone
     # return HttpResponse(request.data.get('invoice'))
     invoice = get_object_or_404(WorkshopInvoice, uuid = request.data.get('invoice'))
-    amount = invoice.amount_to_pay
+    amount = (invoice.amount_to_pay - invoice.discount_amount) / 10
     if amount is not None:
         result = client.service.PaymentRequest(MERCHANT, amount, description, email, mobile, CallbackURL)
         if result.Status == 100:
@@ -44,7 +44,7 @@ def send_request(request):
     else:
         return JsonResponse({'Error': "from us. payment has no amount set on it's invoice."}, safe=False, status = status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+from education.models import Workshop
 
 @api_view(['GET'])
 @authentication_classes((TokenAuthentication,))
@@ -52,23 +52,21 @@ def send_request(request):
 def verify(request):
     if request.GET.get('Status') == 'OK':
         invoice = get_object_or_404(WorkshopInvoice, authority = request.GET.get('Authority'))
-        amount = invoice.amount_to_pay
+        amount = (invoice.amount_to_pay - invoice.discount_amount) / 10
         result = client.service.PaymentVerification(MERCHANT, request.GET['Authority'], amount)
+
         if result.Status == 100:
         # if True:
             invoice.ref_id = result.RefID
             invoice.payed_or_not = True
             invoice.save()
             valid = True
+            log = 'none'
             payment_invoices = invoice.payment.invoice.all()
+
             print(payment_invoices.count())
             if 0 == payment_invoices.count():
                 print(None)
-            # elif 1 == payment_invoices.count():
-            #     print(payment_invoices)
-            #     if payment_invoices.payed_or_not is False:
-            #         print('here2')
-            #         valid = False
             else:
                 for tmp_invoice in payment_invoices:
                     print('here')
@@ -76,15 +74,48 @@ def verify(request):
                         print('here2')
                         valid = False
             if payment_invoices and valid:
+                log = 'here'
                 print('here3')
-                invoice.payment.pending = False
-                
-            return JsonResponse({'RefID': result.RefID}, safe=False, status=status.HTTP_200_OK)
+                payment = invoice.payment
+                # return JsonResponse({'status': result.Status}, safe=False, status=200)
+                payment.pending = False
+                payment.save()
+                workshop = Workshop.objects.get(id = payment.workshop_id)
+                from accounts.models import User
+                user = User.objects.get(id = payment.user_id)
+                workshop.buyers.add(user)
+
+            return JsonResponse({'RefID': result.RefID, 'log':log}, safe=False, status=status.HTTP_200_OK)
             # return HttpResponse('Transaction success.\nRefID: ' + str(result.RefID))
         elif result.Status == 101:
-            return HttpResponse('Transaction submitted : ' + str(result.Status))
+            # invoice.ref_id = result.RefID
+            invoice.payed_or_not = True
+            invoice.save()
+            valid = True
+            log = 'none'
+            payment_invoices = invoice.payment.invoice.all()
+            print(payment_invoices.count())
+            if 0 == payment_invoices.count():
+                print(None)
+            else:
+                for tmp_invoice in payment_invoices:
+                    print('here')
+                    if tmp_invoice.payed_or_not is False:
+                        print('here2')
+                        valid = False
+            if payment_invoices and valid:
+                log = 'here'
+                print('here3')
+                payment = invoice.payment
+                payment.pending = False
+                payment.save()
+                workshop = Workshop.objects.get(id = payment.workshop_id)
+                from accounts.models import User
+                user = User.objects.get(id = payment.user_id)
+                workshop.buyers.add(user)
+            return JsonResponse({'Transaction submitted : ':str(result.Status)}, safe=False, status=101)
         else:
-            return JsonResponse({'message': 'Transaction failed'}, safe=False, status=result.Status)
+            return JsonResponse({'message': 'Transaction failed'}, safe=False, status=101)
             # return HttpResponse('Transaction failed.\nStatus: ' + str(result.Status))
     else:
         return JsonResponse({'message': 'Transaction failed or canceled by user'}, safe=False, status=status.HTTP_417_EXPECTATION_FAILED)

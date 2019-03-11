@@ -69,17 +69,17 @@ from rest_framework import status
 
 class WorkshopPersonalDiscountAPI(APIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
-    permission_classes = (IsAuthenticated, RestFrameworkPermissionController)
+    permission_classes = (IsAuthenticated,)
     serializer_class = WPDS
     model = WorkshopPersonalDiscount
     errors = []
 
-    def dispatch(self, request, uuid = None, format=None, *args, **kwargs):
-        if 'Get' == request.method:
-            self.permission_classes = (IsAuthenticated,)
-        else:
-            self.permission_classes = (IsAuthenticated, RestFrameworkPermissionController)
-        return super().dispatch(request, uuid = uuid, format=None, *args, **kwargs)
+    # def dispatch(self, request, uuid = None, format=None, *args, **kwargs):
+    #     if 'Get' == request.method:
+    #         self.permission_classes = (IsAuthenticated,)
+    #     else:
+    #         self.permission_classes = (IsAuthenticated, RestFrameworkPermissionController)
+    #     return super().dispatch(request, uuid = uuid, format=None, *args, **kwargs)
 
     def get(self, request, format=None, *args, **kwargs):
         if request.GET.get('field'):
@@ -94,6 +94,27 @@ class WorkshopPersonalDiscountAPI(APIView):
             elif 'workshop_uuid' == field:
                 workshop_personal_discounts = get_object_or_404(self.model, workshops__uuid = request.GET.get('user_uuid'))
                 workshop_personal_discount_serialized = self.serializer_class(workshop_personal_discounts)
+            elif 'nowrouz' == field:
+                user = get_object_or_404(User, uuid = request.GET.get('person'))
+                workshop_personal_discount = get_object_or_404(self.model, workshops__uuid = request.GET.get('workshop'), person = user.id, active=True, used=False)
+                if workshop_personal_discount:
+                    workshop_personal_discount_serialized = {'data': {'amount': workshop_personal_discount.amount}}
+                    user = get_object_or_404(User, uuid = request.GET.get('person'))
+                    workshop = get_object_or_404(Workshop, uuid = request.GET.get('workshop'))
+                    try:
+                        payment = WorkshopPayment.objects.filter(workshop = workshop.id, user = user.id)
+                        for payment_tmp in payment:
+                            for invoice in payment_tmp.invoice.all():
+                                invoice.discount_amount = workshop_personal_discount.amount
+                                invoice.save()
+                        # workshop_personal_discount_serialized.used = True
+                        # workshop_personal_discount_serialized.save()
+                    except WorkshopPayment.DoesNotExist:
+                        self.errors.append('workshop {0} not found in Database. Wrong objects.'.format(workshop_uuid))
+                    return JsonResponse({'response': workshop_personal_discount_serialized}, safe=False, status=status.HTTP_202_ACCEPTED)
+                else:
+                    workshop_personal_discount_serialized = {'data': 'null'}
+                    return JsonResponse({'error': "This url doesn't provide information based on your request information."}, safe=False, status=status.HTTP_404_NOT_FOUND)
             else:
                 return JsonResponse({'error': "This url doesn't provide information based on your request information."}, safe=False, status=status.HTTP_404_NOT_FOUND)
         else:
@@ -102,10 +123,18 @@ class WorkshopPersonalDiscountAPI(APIView):
         return JsonResponse({'response': workshop_personal_discount_serialized.data}, safe=False, status=status.HTTP_202_ACCEPTED)
 
     def post(self, request, format=None, *args, **kwargs):
+        self.errors = []
         print(request.data)
         personal_discount_serializer = self.serializer_class(data = request.data)
         if personal_discount_serializer.is_valid():
             workshop_personal_discount = personal_discount_serializer.save()
+            workshop_not_found = False
+            for workshop_uuid in request.data.get('workshops'):
+                try:
+                    workshop = Workshop.objects.get(uuid = workshop_uuid)
+                    workshop_personal_discount.workshops.add(workshop)
+                except Course.DoesNotExist:
+                    self.errors.append('workshop {0} not found in Database. Wrong objects.'.format(workshop_uuid))
         else:
             print('personal_discount_serializer_errors: {0}'.format(personal_discount_serializer.errors))
             self.errors.append({'personal_discount_serializer_errors': personal_discount_serializer.errors})
@@ -113,12 +142,20 @@ class WorkshopPersonalDiscountAPI(APIView):
         return JsonResponse({'received data': request.data, 'errors': self.errors}, safe=False, status=status.HTTP_200_OK)
     
     def put(self, request, uuid, format=None, *args, **kwargs):
+        self.errors = []
         print(request.data)
         print(uuid)
         workshop_personal_discount = get_object_or_404(self.model, uuid = uuid)
         personal_discount_serializer = self.serializer_class(workshop_personal_discount, data = request.data, partial=True)
         if personal_discount_serializer.is_valid():
             workshop_personal_discount = personal_discount_serializer.save()
+            workshop_not_found = False
+            for workshop_uuid in request.data.get('workshops'):
+                try:
+                    workshop = Workshop.objects.get(uuid = workshop_uuid)
+                    workshop_race_discount.workshops.add(workshop)
+                except Course.DoesNotExist:
+                    self.errors.append('workshop {0} not found in Database. Wrong objects.'.format(workshop_uuid))
         else:
             print('personal_discount_serializer_errors: {0}'.format(personal_discount_serializer.errors))
             self.errors.append({'personal_discount_serializer_errors': personal_discount_serializer.errors})
@@ -233,7 +270,7 @@ class WorkshopDateDiscountAPI(APIView):
 '''                                                                                                       
                                                                                                        
 from education.serializers.discount_serializer import WorkshopRaceDiscountSerializer as WRDS
-from education.models import WorkshopRaceDiscount
+from education.models import WorkshopRaceDiscount, Course, Workshop, WorkshopPayment
 class WorkshopRaceDiscountAPI(APIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     permission_classes = (IsAuthenticated,)
@@ -252,8 +289,36 @@ class WorkshopRaceDiscountAPI(APIView):
                 workshop_race_discounts = get_object_or_404(self.model, person = user.id)
                 workshop_race_discount_serialized = self.serializer_class(workshop_race_discounts)
             elif 'workshop_uuid' == field:
-                workshop_race_discounts = get_object_or_404(self.model, workshops__uuid = request.GET.get('user_uuid'))
+                workshop_race_discounts = get_object_or_404(self.model, workshops__uuid = request.GET.get('workshop_uuid'))
                 workshop_race_discount_serialized = self.serializer_class(workshop_race_discounts)
+            elif 'nowrouz' == field:
+                print('1')
+                workshop = get_object_or_404(Workshop, uuid = request.GET.get('workshop'))
+                print('2')
+                workshop_race_discount = get_object_or_404(self.model, workshops__id = workshop.id, active=True)
+
+                if workshop_race_discount.used_count < workshop_race_discount.limit:
+                    print('3')
+                    workshop_race_discount_serialized = {'data': {'amount': workshop_race_discount.amount}}
+                    print('4')                
+                    user = get_object_or_404(User, uuid = request.GET.get('user'))
+                    print('5')
+                    workshop = get_object_or_404(Workshop, uuid = request.GET.get('workshop'))
+                    print('6')
+                    try:
+                        payment = WorkshopPayment.objects.filter(workshop = workshop.id, user = user.id)
+                        for payment_tmp in payment:
+                            for invoice in payment_tmp.invoice.all():
+                                invoice.discount_amount = workshop_race_discount.amount
+                                invoice.save()
+                        workshop_race_discount.used_count = workshop_race_discount.used_count + 1
+                        workshop_race_discount.save()
+                    except WorkshopPayment.DoesNotExist:
+                        self.errors.append('workshop {0} not found in Database. Wrong objects.'.format(workshop_uuid))
+                    return JsonResponse({'response': workshop_race_discount_serialized}, safe=False, status=status.HTTP_202_ACCEPTED)
+                else:
+                    workshop_race_discount_serialized = {'data': 'null'}
+                    return JsonResponse({'error': "This url doesn't provide information based on your request information."}, safe=False, status=status.HTTP_404_NOT_FOUND)
             else:
                 return JsonResponse({'error': "This url doesn't provide information based on your request information."}, safe=False, status=status.HTTP_404_NOT_FOUND)
         else:
@@ -262,10 +327,18 @@ class WorkshopRaceDiscountAPI(APIView):
         return JsonResponse({'response': workshop_race_discount_serialized.data}, safe=False, status=status.HTTP_202_ACCEPTED)
 
     def post(self, request, format=None, *args, **kwargs):
+        self.errors = []
         print(request.data)
         race_discount_serializer = self.serializer_class(data = request.data)
         if race_discount_serializer.is_valid():
             workshop_race_discount = race_discount_serializer.save()
+            workshop_not_found = False
+            for workshop_uuid in request.data.get('workshops'):
+                try:
+                    workshop = Workshop.objects.get(uuid = workshop_uuid)
+                    workshop_race_discount.workshops.add(workshop)
+                except Course.DoesNotExist:
+                    self.errors.append('workshop {0} not found in Database. Wrong objects.'.format(workshop_uuid))
         else:
             print('race_discount_serializer_errors: {0}'.format(race_discount_serializer.errors))
             self.errors.append({'race_discount_serializer_errors': race_discount_serializer.errors})
@@ -273,11 +346,19 @@ class WorkshopRaceDiscountAPI(APIView):
         return JsonResponse({'received data': request.data, 'errors': self.errors}, safe=False, status=status.HTTP_200_OK)
     
     def put(self, request, uuid, format=None, *args, **kwargs):
+        self.errors = []
         print(request.data)
         workshop_race_discount = get_object_or_404(self.model, uuid = uuid)
         race_discount_serializer = self.serializer_class(workshop_race_discount, data = request.data, partial=True)
         if race_discount_serializer.is_valid():
             workshop_race_discount = race_discount_serializer.save()
+            workshop_not_found = False
+            for workshop_uuid in request.data.get('workshops'):
+                try:
+                    workshop = Workshop.objects.get(uuid = workshop_uuid)
+                    workshop_race_discount.workshops.add(workshop)
+                except Course.DoesNotExist:
+                    self.errors.append('workshop {0} not found in Database. Wrong objects.'.format(workshop_uuid))
         else:
             print('race_discount_serializer_errors: {0}'.format(race_discount_serializer.errors))
             self.errors.append({'race_discount_serializer_errors': race_discount_serializer.errors})

@@ -12,7 +12,7 @@ Y88b  d88P 888 Y88..88P 888 d88P 888  888 888        888   888  888  888 888 d88
                                                                          888                                       
 '''  
 from accounts.serializers.user_serializer import UserSerializer as US
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from accounts.models import User
 
 
@@ -91,13 +91,13 @@ Y88b. .d88P Y88b  d88P 888        888  T88b        d8888888888 888         888
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 
 @method_decorator([require_http_methods(["GET", "POST", "PUT", "DELETE"])], name='dispatch')
 class UserAPI(APIView):
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
     permission_classes = (IsAuthenticated,)
     serializer_class = US
     model = User
@@ -109,6 +109,7 @@ class UserAPI(APIView):
         return super().dispatch(request, uuid = uuid, format=None, *args, **kwargs)
 
     def get(self, request, format=None, *args, **kwargs):
+        self.errors = []
         print('in get')
         user_serialized = 'user_serialized temp'
         if request.GET.get('field'):
@@ -127,28 +128,31 @@ class UserAPI(APIView):
         return JsonResponse({'response': user_serialized.data}, safe=False, status=status.HTTP_200_OK)
 
     def post(self, request, format=None, *args, **kwargs):
+        self.errors = []
+        # return HttpResponse(request.data)
         print(request.data)
-        user_serializer = self.serializer_class(data = request.POST)
+        user_serializer = self.serializer_class(data = request.data)
         if user_serializer.is_valid():
             user = user_serializer.save()
-            return JsonResponse({'received data': request.POST, 'errors': user_serializer.errors}, safe=False, status=status.HTTP_201_CREATED)    
+            return JsonResponse({'received data': request.data, 'errors': user_serializer.errors}, safe=False, status=status.HTTP_201_CREATED)    
         else:
             print('user_serializer_errors: {0}'.format(user_serializer.errors))
             self.errors.append({'user_serializer': user_serializer.errors})
-            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'received data': request.data, 'errors': self.errors}, safe=False, status=status.HTTP_400_BAD_REQUEST)
     
     def put(self, request, uuid, format=None, *args, **kwargs):
+        self.errors = []
         print(request.data)
         print(uuid)
         user = get_object_or_404(self.model, pk=uuid)
-        user_serializer = self.serializer_class(user, data=request.POST, partial=True)
+        user_serializer = self.serializer_class(user, data=request.data, partial=True)
         if user_serializer.is_valid():
             user = user_serializer.save()
-            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_201_CREATED)    
+            return JsonResponse({'received data': request.data, 'errors': self.errors}, safe=False, status=status.HTTP_201_CREATED)    
         else:
             print('user_serializer_errors: {0}'.format(user_serializer.errors))
             self.errors.append({'user_serializer': user_serializer.errors})
-            return JsonResponse({'received data': request.POST, 'errors': self.errors}, safe=False, status=status.HTTP_400_BAD_REQUEST) 
+            return JsonResponse({'received data': request.data, 'errors': self.errors}, safe=False, status=status.HTTP_400_BAD_REQUEST) 
 
     def delete(self, request, uuid, format=None, *args, **kwargs):
         # delete an object and send a confirmation response

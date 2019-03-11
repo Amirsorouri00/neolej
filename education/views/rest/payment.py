@@ -73,10 +73,9 @@ class WorkshopInvoiceApi(APIView):
             if 'all' == field:
                 workshop_invoices = self.model.objects.all()
                 workshop_invoices_serialized = self.serializer_class(workshop_invoices, many=True)
-            # elif 'user_uuid' == field:
-            #     user = get_object_or_404(User, uuid = request.GET.get('user_uuid'))
-            #     workshop_invoices = get_object_or_404(self.model, person = user.id, used = False)
-            #     workshop_invoices_serialized = self.serializer_class(workshop_invoices)
+            elif 'uuid' == field:
+                workshop_invoices = get_object_or_404(self.model, uuid = request.GET.get('uuid'))
+                workshop_invoices_serialized = self.serializer_class(workshop_invoices)
             # elif 'workshop_uuid' == field:
             #     workshop_invoices = get_object_or_404(self.model, workshops__uuid = request.GET.get('user_uuid'))
             #     workshop_invoices_serialized = self.serializer_class(workshop_invoices)
@@ -150,6 +149,16 @@ class WorkshopInvoiceApi(APIView):
             return WPS
         else: return WPS
 
+'''
+8888888b.     d8888 Y88b   d88P 888b     d888 8888888888 888b    888 88888888888 
+888   Y88b   d88888  Y88b d88P  8888b   d8888 888        8888b   888     888     
+888    888  d88P888   Y88o88P   88888b.d88888 888        88888b  888     888     
+888   d88P d88P 888    Y888P    888Y88888P888 8888888    888Y88b 888     888     
+8888888P" d88P  888     888     888 Y888P 888 888        888 Y88b888     888     
+888      d88P   888     888     888  Y8P  888 888        888  Y88888     888     
+888     d8888888888     888     888   "   888 888        888   Y8888     888     
+888    d88P     888     888     888       888 8888888888 888    Y888     888     
+'''                                                                                                                                                               
 
 from education.models import Workshop
 import datetime
@@ -170,9 +179,13 @@ class WorkshopPaymentApi(APIView):
             elif 'uuid' == field:
                 workshop_payments = get_object_or_404(WorkshopPayment, uuid = request.GET.get('uuid'))
                 workshop_payments_serialized = self.serializer_class(workshop_payments)
-            # elif 'workshop_uuid' == field:
-            #     workshop_invoices = get_object_or_404(self.model, workshops__uuid = request.GET.get('user_uuid'))
-            #     workshop_invoices_serialized = self.serializer_class(workshop_invoices)
+            elif 'user_workshop_uuid' == field:
+                user = get_object_or_404(User, uuid=request.GET.get('user'))
+                workshop = get_object_or_404(Workshop, uuid=request.GET.get('workshop'))
+                workshop_payments = WorkshopPayment.objects.filter(workshop__id = workshop.id, user_id = user.id)
+                for workshop in workshop_payments:
+                    workshop_payments = workshop
+                workshop_payments_serialized = self.serializer_class(workshop_payments)
             else:
                 return JsonResponse({'error': "This url doesn't provide information based on your request information."}, safe=False, status=status.HTTP_404_NOT_FOUND)
         else:
@@ -191,10 +204,12 @@ class WorkshopPaymentApi(APIView):
             try:
                 payment = payment_serializer.save()
                 workshop = get_object_or_404(Workshop, uuid = request.data.get('workshop'))
+                # from education.services import get_price
+                # result = get_price(user, workshop)
                 invoice = WorkshopInvoice.objects.create(amount_to_pay = workshop.price.get_price('rial'), index = 1, \
                     due_date = datetime.datetime.now().strftime('%Y-%m-%d'), created_by = request.user, payment = payment)
                 invoice_serializer = WIS(invoice)
-                return JsonResponse({'received data': request.data, 'payment': invoice_serializer.data, 'errors': self.errors, 'messages': self.messages}, safe=False, status=status.HTTP_201_CREATED)
+                return JsonResponse({'received data': request.data, 'invoice': invoice_serializer.data, 'errors': self.errors, 'messages': self.messages}, safe=False, status=status.HTTP_201_CREATED)
                 
             except ProtectedError:
                 error_message = "This object can't be deleted!!"
@@ -208,7 +223,7 @@ class WorkshopPaymentApi(APIView):
         else:
             self.errors.append({'workshop_payment_serializer_errors': payment_serializer.errors})
             print('workshop_payment_serializer_errors: {0}'.format(invoice_serializer.errors))
-            return JsonResponse({'received data': request.data, 'payment': 'There is bug on creating payment from server. Plz Call Us ASAP for any help.', 'errors': self.errors, 'messages': self.messages}, safe=False, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'received data': request.data, 'invoice': 'There is bug on creating payment from server. Plz Call Us ASAP for any help.', 'errors': self.errors, 'messages': self.messages}, safe=False, status=status.HTTP_400_BAD_REQUEST)
 
 
 
