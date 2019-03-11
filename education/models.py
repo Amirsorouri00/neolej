@@ -68,7 +68,8 @@ class Price(models.Model):
     unit = models.ForeignKey(CostUnit, blank=True, null=True, on_delete=models.SET_NULL)
     cost = models.DecimalField(max_digits=10, decimal_places=3)
 
-    def get_price(self, unit):
+    def get_price(self, unit, user_uuid=None):
+        # workshop = self.workshop_set.get()
         return self.cost
 
 class CourseBody(models.Model):
@@ -180,11 +181,15 @@ class AbstractDiscount(models.Model):
         default=0,
         validators=[MaxValueValidator(100), MinValueValidator(1)]
     )
+    amount = models.IntegerField(
+        default=0,
+    )
     used = models.BooleanField(default=False)
     # price = models.ForeignKey(Price, blank=True, null=True, on_delete=models.CASCADE, related_name='price_discount')
 
 class WorkshopDiscount(AbstractDiscount):
     workshops = models.ManyToManyField(Workshop, blank=True)
+    active = models.BooleanField(default=False)
 
 class WorkshopPersonalDiscount(WorkshopDiscount):
     coupon_text = models.CharField(max_length=15, blank=False, null=False)
@@ -200,7 +205,7 @@ class WorkshopDateDiscount(WorkshopDiscount):
 class WorkshopRaceDiscount(WorkshopDiscount):
     coupon_text = models.CharField(max_length=15, blank=True, null=True)
     limit = models.IntegerField(default=0, validators=[MaxValueValidator(100), MinValueValidator(0)])
-    used = None
+    used_count = models.IntegerField(default=0, validators=[MaxValueValidator(100), MinValueValidator(0)])
     # Models. foreignkey field for workhsop or online courses
 
 class DiscountType(models.Model):
@@ -283,6 +288,9 @@ class WorkshopInvoice(AbstractInvoice):
     logs = models.CharField(max_length=127, blank=True, null=True)
     authority = models.CharField(max_length=127, blank=True, null=True)
     ref_id = models.CharField(max_length=127, blank=True, null=True)
+    discount_amount = models.IntegerField(
+        default=0,
+    )
 
 
 
