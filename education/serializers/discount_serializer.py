@@ -29,7 +29,8 @@ from commons import serializers as cserializers
 '''                                                                                       
                                                                                        
 from education.models import AbstractDiscount, WorkshopDiscount, WorkshopPersonalDiscount, WorkshopRaceDiscount, WorkshopDateDiscount                                                                                    
-from education.models import DiscountType
+from education.models import DiscountType, Workshop
+from education.serializers.workshop_serializer import WorkshopSerializer
 from rest_framework import serializers
 
 
@@ -68,16 +69,18 @@ class WorkshopDiscountSerializer(DiscountSerializer):
 class WorkshopPersonalDiscountSerializer(WorkshopDiscountSerializer):
     class Meta:
         model = WorkshopPersonalDiscount
-        fields = ('id', 'uuid', 'percent', 'coupon_text', 'person', 'start_date', 'end_date', 'workshops', 'used')
-        read_only_fields = ['used']
+        fields = ('id', 'uuid', 'percent', 'coupon_text', 'person', 'start_date', 'end_date', 'workshops', 'used', 'active', 'amount')
+        read_only_fields = ['used', 'workshops']
         
 class WorkshopDateDiscountSerializer(WorkshopDiscountSerializer):
     class Meta:
         model = WorkshopDateDiscount
-        fields = ('id', 'uuid', 'percent', 'start_date', 'end_date', 'workshops', 'used')
+        fields = ('id', 'uuid', 'percent', 'start_date', 'end_date', 'workshops', 'used', 'active', 'amount')
         read_only_fields = ['used']
 
 class WorkshopRaceDiscountSerializer(WorkshopDiscountSerializer):
+    workshops = WorkshopSerializer(read_only = True, many=True)
     class Meta:
         model = WorkshopRaceDiscount
-        fields = ('id', 'uuid', 'percent', 'coupon_text', 'limit', 'workshops')
+        fields = ('id', 'uuid', 'percent', 'coupon_text', 'limit', 'workshops', 'active', 'amount', 'used_count')
+        read_only_fields = ['workshops']
