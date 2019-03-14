@@ -12,7 +12,7 @@ from education.models import WorkshopInvoice
 MERCHANT = '9f35b4e2-4022-11e9-ad5c-000c295eb8fc'
 client = Client('https://www.zarinpal.com/pg/services/WebGate/wsdl')
 # amount = 1000  # Toman / Required
-description = "توضیحات مربوط به تراکنش را در این قسمت وارد کنید"  # Required
+description = "خرید دوره مطالعات پایه."  # Required
 # email = 'amirsorouri26@gmail.com'  # Optional
 # mobile = '09128048897'  # Optional
 CallbackURL = 'http://neolej.ir/payment/verify/' # Important: need to edit for realy server.
@@ -31,7 +31,7 @@ def send_request(request):
     mobile = request.user.cell_phone
     # return HttpResponse(request.data.get('invoice'))
     invoice = get_object_or_404(WorkshopInvoice, uuid = request.data.get('invoice'))
-    amount = (invoice.amount_to_pay - invoice.discount_amount) / 10
+    amount = (invoice.amount_to_pay - invoice.discount_amount) / 10 
     if amount is not None:
         result = client.service.PaymentRequest(MERCHANT, amount, description, email, mobile, CallbackURL)
         if result.Status == 100:
@@ -51,9 +51,24 @@ from education.models import Workshop
 @permission_classes((IsAuthenticated,))
 def verify(request):
     if request.GET.get('Status') == 'OK':
+        from decimal import Decimal
+        # message = [{
+        #     "name": "نئولج",
+        #     "amount": Decimal(1000.500).normalize() # amount*10
+        # }]
+        # to = request.user.cell_phone
+        # from commons.services import sms_130
+        # r = sms_130(message, to)
         invoice = get_object_or_404(WorkshopInvoice, authority = request.GET.get('Authority'))
         amount = (invoice.amount_to_pay - invoice.discount_amount) / 10
         result = client.service.PaymentVerification(MERCHANT, request.GET['Authority'], amount)
+        message = [{
+            "name": "نئولج",
+            "amount": int(amount*10)
+        }]
+        to = request.user.cell_phone
+        from commons.services import sms_130
+        r = sms_130(message, to)
 
         if result.Status == 100:
         # if True:
@@ -84,7 +99,7 @@ def verify(request):
                 from accounts.models import User
                 user = User.objects.get(id = payment.user_id)
                 workshop.buyers.add(user)
-
+            # r = sms_130(message, to)
             return JsonResponse({'RefID': result.RefID, 'log':log}, safe=False, status=status.HTTP_200_OK)
             # return HttpResponse('Transaction success.\nRefID: ' + str(result.RefID))
         elif result.Status == 101:
@@ -113,6 +128,7 @@ def verify(request):
                 from accounts.models import User
                 user = User.objects.get(id = payment.user_id)
                 workshop.buyers.add(user)
+            # r = sms_130(message, to)
             return JsonResponse({'Transaction submitted : ':str(result.Status)}, safe=False, status=101)
         else:
             return JsonResponse({'message': 'Transaction failed'}, safe=False, status=101)
@@ -120,4 +136,5 @@ def verify(request):
     else:
         return JsonResponse({'message': 'Transaction failed or canceled by user'}, safe=False, status=status.HTTP_417_EXPECTATION_FAILED)
         # return HttpResponse('Transaction failed or canceled by user')
+
 

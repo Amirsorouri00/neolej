@@ -134,6 +134,15 @@ class UserAPI(APIView):
         user_serializer = self.serializer_class(data = request.data)
         if user_serializer.is_valid():
             user = user_serializer.save()
+            from commons.services import sms_384
+            message = [{
+                "adres": "نئولج",
+                "username": request.data.get('email'),
+                "password": request.data.get('password')
+            }]
+            # to = ['09128048897', '09102108510']
+            to = request.data.get('cell_phone')
+            r = sms_384(message, to)
             return JsonResponse({'received data': request.data, 'errors': user_serializer.errors}, safe=False, status=status.HTTP_201_CREATED)    
         else:
             print('user_serializer_errors: {0}'.format(user_serializer.errors))
