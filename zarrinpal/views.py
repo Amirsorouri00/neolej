@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Github.com/Rasooll
 from django.http import HttpResponse
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from zeep import Client
 
 from django.http import JsonResponse, HttpResponse
@@ -15,7 +15,7 @@ client = Client('https://www.zarinpal.com/pg/services/WebGate/wsdl')
 description = "خرید دوره مطالعات پایه."  # Required
 # email = 'amirsorouri26@gmail.com'  # Optional
 # mobile = '09128048897'  # Optional
-CallbackURL = 'http://neolej.ir/payment/verify/' # Important: need to edit for realy server.
+CallbackURL = 'http://neolej.ir/api/payment/verify_redirect/' # Important: need to edit for realy server.
 
 
 from django.views.decorators.csrf import csrf_exempt
@@ -131,10 +131,106 @@ def verify(request):
             # r = sms_130(message, to)
             return JsonResponse({'Transaction submitted : ':str(result.Status)}, safe=False, status=101)
         else:
-            return JsonResponse({'message': 'Transaction failed'}, safe=False, status=101)
+            return JsonResponse({'message': 'Transaction failed', 'status': str(result.Status)}, safe=False, status=101)
             # return HttpResponse('Transaction failed.\nStatus: ' + str(result.Status))
     else:
         return JsonResponse({'message': 'Transaction failed or canceled by user'}, safe=False, status=status.HTTP_417_EXPECTATION_FAILED)
         # return HttpResponse('Transaction failed or canceled by user')
 
+@api_view(['GET'])
+def verify_redirect(request):
+    if request.GET.get('Status') == 'OK':
+        from decimal import Decimal
+        # message = [{
+        #     "name": "نئولج",
+        #     "amount": Decimal(1000.500).normalize() # amount*10
+        # }]
+        # to = request.user.cell_phone
+        # from commons.services import sms_130
+        # r = sms_130(message, to)
+        invoice = get_object_or_404(WorkshopInvoice, authority = request.GET.get('Authority'))
+        amount = (invoice.amount_to_pay - invoice.discount_amount) / 10
+        result = client.service.PaymentVerification(MERCHANT, request.GET['Authority'], amount)
+        message = [{
+            "name": "نئولج",
+            "amount": int(amount*10)
+        }]
+        to = invoice.created_by.cell_phone
+        
+        if result.Status == 100:
+        # if True:
+            invoice.ref_id = result.RefID
+            invoice.payed_or_not = True
+            invoice.save()
+            valid = True
+            log = 'none'
+            payment_invoices = invoice.payment.invoice.all()
 
+            print(payment_invoices.count())
+            if 0 == payment_invoices.count():
+                print(None)
+            else:
+                for tmp_invoice in payment_invoices:
+                    print('here')
+                    if tmp_invoice.payed_or_not is False:
+                        print('here2')
+                        valid = False
+            if payment_invoices and valid:
+                log = 'here'
+                print('here3')
+                payment = invoice.payment
+                # return JsonResponse({'status': result.Status}, safe=False, status=200)
+                payment.pending = False
+                payment.save()
+                workshop = Workshop.objects.get(id = payment.workshop_id)
+                from accounts.models import User
+                user = User.objects.get(id = payment.user_id)
+                workshop.buyers.add(user)
+
+                from commons.services import sms_130
+                r = sms_130(message, to)
+
+            # r = sms_130(message, to)
+            # return JsonResponse({'RefID': result.RefID, 'log':log}, safe=False, status=status.HTTP_200_OK)
+            # return HttpResponse('Transaction success.\nRefID: ' + str(result.RefID))
+            return redirect('http://neolej.ir/payment/success')
+        elif result.Status == 101:
+            # invoice.ref_id = result.RefID
+            invoice.payed_or_not = True
+            invoice.save()
+            valid = True
+            log = 'none'
+            payment_invoices = invoice.payment.invoice.all()
+            print(payment_invoices.count())
+            if 0 == payment_invoices.count():
+                print(None)
+            else:
+                for tmp_invoice in payment_invoices:
+                    print('here')
+                    if tmp_invoice.payed_or_not is False:
+                        print('here2')
+                        valid = False
+            if payment_invoices and valid:
+                log = 'here'
+                print('here3')
+                payment = invoice.payment
+                payment.pending = False
+                payment.save()
+                workshop = Workshop.objects.get(id = payment.workshop_id)
+                from accounts.models import User
+                user = User.objects.get(id = payment.user_id)
+                workshop.buyers.add(user)
+
+                from commons.services import sms_130
+                r = sms_130(message, to)
+            # r = sms_130(message, to)
+            # return JsonResponse({'Transaction submitted : ':str(result.Status)}, safe=False, status=101)
+            return redirect('http://neolej.ir/payment/success')
+        else:
+            # return JsonResponse({'message': 'Transaction failed', 'status': str(result.Status)}, safe=False, status=101)
+            # return HttpResponse('Transaction failed.\nStatus: ' + str(result.Status))
+            return redirect('http://neolej.ir/payment/fail')
+    else:
+        # return JsonResponse({'message': 'Transaction failed or canceled by user'}, safe=False, status=status.HTTP_417_EXPECTATION_FAILED)
+        # return HttpResponse('Transaction failed or canceled by user')
+        return redirect('http://neolej.ir/payment/fail')
